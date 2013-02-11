@@ -42,7 +42,7 @@ class DetInfoCtrlObj : public HwDetInfoCtrlObj
 
  public:
     DetInfoCtrlObj(Camera& cam);
-    virtual ~DetInfoCtrlObj();
+    virtual ~DetInfoCtrlObj() {};
 
     virtual void getMaxImageSize(Size& max_image_size);
     virtual void getDetectorImageSize(Size& det_image_size);
@@ -73,7 +73,7 @@ class SyncCtrlObj : public HwSyncCtrlObj
 
   public:
     SyncCtrlObj(Camera& cam);
-    virtual ~SyncCtrlObj();
+    virtual ~SyncCtrlObj() {};
     
     virtual bool checkTrigMode(TrigMode trig_mode);
     virtual void setTrigMode(TrigMode  trig_mode);
@@ -105,7 +105,7 @@ class RoiCtrlObj : public HwRoiCtrlObj
 
  public:
     RoiCtrlObj(Camera& cam);
-    virtual ~RoiCtrlObj();
+    virtual ~RoiCtrlObj() {};
 
     virtual void setRoi(const Roi& set_roi);
     virtual void getRoi(Roi& hw_roi);
@@ -121,18 +121,52 @@ class RoiCtrlObj : public HwRoiCtrlObj
  *******************************************************************/
 class BinCtrlObj : public HwBinCtrlObj
 {
+    DEB_CLASS_NAMESPC(DebModCamera, "BinCtrlObj", "PointGrey");
  public:
-  BinCtrlObj(Camera& cam);
-  virtual ~BinCtrlObj() {}
+    BinCtrlObj(Camera& cam);
+    virtual ~BinCtrlObj() {}
   
-  virtual void setBin(const Bin& bin);
-  virtual void getBin(Bin& bin);
-  //allow all binning
-  virtual void checkBin(Bin& bin);
+    virtual void setBin(const Bin& bin);
+    virtual void getBin(Bin& bin);
+    virtual void checkBin(Bin& bin);
  private:
-  Camera& m_cam;
+    Camera& m_cam;
 
 };
+
+/*******************************************************************
+ * \class VideoCtrlObj
+ * \brief Control object providing PointGrey Video interface
+ *******************************************************************/
+
+class VideoCtrlObj : public HwVideoCtrlObj
+{
+    DEB_CLASS_NAMESPC(DebModCamera, "VideoCtrlObj", "PointGrey");
+  public:
+    VideoCtrlObj(Camera& cam);
+    virtual ~VideoCtrlObj() {};
+    
+    virtual void getSupportedVideoMode(std::list<VideoMode> &aList) const;
+    virtual void getVideoMode(VideoMode&) const;
+    virtual void setVideoMode(VideoMode);
+
+    virtual void getLive(bool&) const;
+    virtual void setLive(bool);
+
+    virtual void getGain(double&) const;
+    virtual void setGain(double);
+
+    virtual void checkBin(Bin& bin){};
+    virtual void setBin(const Bin&){};
+
+    virtual void checkRoi(const Roi& set_roi, Roi& hw_roi){};
+    virtual void setRoi(const Roi&){};
+
+  private:
+    Camera& m_cam;
+    bool m_live;
+};
+
 
 /*******************************************************************
  * \class Interface
@@ -145,24 +179,24 @@ class Interface : public HwInterface
 
  public:
     Interface(Camera& cam);
-    virtual ~Interface();
+    virtual ~Interface() {};
 
     //- From HwInterface
-    virtual void    getCapList(CapList&) const;
-    virtual void    reset(ResetLevel reset_level);
-    virtual void    prepareAcq();
-    virtual void    startAcq();
-    virtual void    stopAcq();
-    virtual void    getStatus(StatusType& status);
-    virtual int     getNbHwAcquiredFrames();
+    virtual void getCapList(CapList&) const;
+    virtual void reset(ResetLevel reset_level);
+    virtual void prepareAcq();
+    virtual void startAcq();
+    virtual void stopAcq();
+    virtual void getStatus(StatusType& status);
+    virtual int getNbHwAcquiredFrames();
 
-    void            getFrameRate(double& frame_rate);
-    void            setTimeout(int TO);
-    void	    setGain(double gain);
-    void	    getGain(double& gain) const;
+    //- PointGrey Specific
+    void getAutoExpTime(bool &auto_frame_rate) const;
+    void setAutoExpTime(bool auto_exp_time);
 
-    void	    setAutoGain(bool auto_gain);
-    void	    getAutoGain(bool& auto_gain) const;
+    void getAutoGain(bool& auto_gain) const;
+    void setAutoGain(bool auto_gain);
+
  private:
     Camera&         m_cam;
     CapList         m_cap_list;
@@ -170,11 +204,8 @@ class Interface : public HwInterface
     SyncCtrlObj     m_sync;
     BinCtrlObj      m_bin;
     RoiCtrlObj      m_roi;
-    //FlipCtrlObj    m_flip;
-    mutable Cond    m_cond;
+    VideoCtrlObj    m_video;
 };
-
-
 
 } // namespace PointGrey
 } // namespace lima

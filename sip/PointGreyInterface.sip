@@ -9,22 +9,20 @@ namespace PointGrey
     Interface(PointGrey::Camera& cam);
     virtual ~Interface();
 
-    //- From HwInterface
-    //    virtual void 	getCapList(CapList& /Out/) const;
+    //- from HwInterface
     virtual void	getCapList(std::vector<HwCap> &cap_list /Out/) const;
     virtual void	reset(ResetLevel reset_level);
     virtual void 	prepareAcq();
     virtual void 	startAcq();
     virtual void 	stopAcq();
     virtual void 	getStatus(StatusType& status /Out/);
-    virtual int 	getNbHwAcquiredFrames();
+    virtual int 	getNbHwAcquiredFrames();    
+    
+    //- camera specific
+    void    getAutoExpTime(bool& auto_frame_rate /Out/) const;
+    void    setAutoExpTime(bool  auto_exp_time);
 
-    void		getFrameRate(double& frame_rate /Out/);
-    void		setTimeout(int);
-    void		setGain(double gain);
-    void		getGain(double& gain /Out/) const;
-
-    void		setAutoGain(bool auto_gain);
-    void		getAutoGain(bool& auto_gain /Out/) const;
+    void    getAutoGain(bool& auto_gain /Out/) const;    
+    void    setAutoGain(bool  auto_gain);
   };
 };

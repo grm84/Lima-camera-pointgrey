@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <limits>
 #include "HwMaxImageSizeCallback.h"
-#include "HwBufferMgr.h"
 
 #include "FlyCapture2.h"
 
@@ -39,91 +38,110 @@ namespace PointGrey
  * \class Camera
  * \brief object controlling the Point Grey camera via Pylon driver
  *******************************************************************/
-class Camera
+class VideoCtrlObj;
+class SyncCtrlObj;
+class Camera : public HwMaxImageSizeCallbackGen
 {
+    friend class SyncCtrlObj;
+
     DEB_CLASS_NAMESPC(DebModCamera, "Camera", "PointGrey");
-    friend class Interface;
+    friend class VideoCtrlObj;
  public:
 
     enum Status {
       Ready, Exposure, Readout, Latency, Fault
     };
 
-    Camera(const std::string& camera_ip,int packet_size = -1);
-//    Camera(const Camera& other );
+    Camera(const std::string& camera_ip, const int camera_serial_no = 0);
     ~Camera();
 
+    // hw interface
     void prepareAcq();
     void startAcq();
     void stopAcq();
-    
-    // -- detector info object
-    void getImageType(ImageType& type);
-    void setImageType(ImageType type);
 
+    void getStatus(Camera::Status& status);
+    void reset(void);
+    
+    // detector info object
     void getDetectorType(std::string& type);
     void getDetectorModel(std::string& model);
     void getDetectorImageSize(Size& size);
-    
-    // -- Buffer control object
-    HwBufferCtrlObj* getBufferCtrlObj();
-    
-    //-- Synch control object
-    void setTrigMode(TrigMode  mode);
+
+    // synch control object
     void getTrigMode(TrigMode& mode);
-    
-    void setExpTime(double  exp_time);
+    void setTrigMode(TrigMode  mode);
+
     void getExpTime(double& exp_time);
+    void setExpTime(double  exp_time);
+    void getExpTimeRange(double& min_exp_time, double& max_exp_time) const;
 
-    void setLatTime(double  lat_time);
     void getLatTime(double& lat_time);
+    void setLatTime(double  lat_time);
+    void getLatTimeRange(double& min_lat_time, double& max_lat_time) const;
 
-    void getExposureTimeRange(double& min_expo, double& max_expo) const;
-    void getLatTimeRange(double& min_lat, double& max_lat) const;    
-
-    void setNbFrames(int  nb_frames);
     void getNbFrames(int& nb_frames);
+    void setNbFrames(int  nb_frames);
     void getNbHwAcquiredFrames(int &nb_acq_frames);
 
+    // roi control object
     void checkRoi(const Roi& set_roi, Roi& hw_roi);
+    void getRoi(Roi& hw_roi);
     void setRoi(const Roi& set_roi);
-    void getRoi(Roi& hw_roi);    
 
+    // bin control object
     void checkBin(Bin&);
-    void setBin(const Bin&);
-    void getBin(Bin&);
+    void getBin(Bin& bin);
+    void setBin(const Bin& bin);
 
-    void setInterPacketDelay(int ipd);
+    // video control object
+    void getVideoMode(VideoMode& mode) const;
+    void setVideoMode(VideoMode  mode);
 
-    void setFrameTransmissionDelay(int ftd);
+    void getGain(double& gain);
+    void setGain(double  gain);
 
-    void getStatus(Camera::Status& status);
-    // -- camera specific, LIMA don't worry about it !
-    void getFrameRate(double& frame_rate);
-    bool isBinnigAvailable(void);
-    void setTimeout(int TO);
-    void reset(void);
+    // camera specific
+    void getAutoExpTime(bool& auto_frame_rate) const;
+    void setAutoExpTime(bool  auto_exp_time);
 
-    void setGain(double gain);
-    void getGain(double& gain) const;
-
-    void setAutoGain(bool auto_gain);
     void getAutoGain(bool& auto_gain) const;
+    void setAutoGain(bool  auto_gain);
+
+ protected:
+    void _getPropertyInfo(FlyCapture2::PropertyInfo *property_info);
+    void _getProperty(FlyCapture2::Property *property);
+    void _setProperty(FlyCapture2::Property *property);
 
  private:
-    //- lima stuff
-    SoftBufferCtrlObj		m_buffer_ctrl_obj;
-    int                     m_nb_frames;
-    Camera::Status          m_status;
-    int                     m_image_number;
-    double                  m_exp_time;
-    int                     m_timeout;
-    double                  m_latency_time;
+    static void _newFrameCBK(FlyCapture2::Image* image, const void *data);
+    void _newFrame(FlyCapture2::Image *image);
+
+    SyncCtrlObj              *m_sync;
+    VideoCtrlObj             *m_video;
+
+    Camera::Status            m_status;
+    int                       m_nb_frames;
+    int                       m_image_number;
+    bool                      m_continue_acq;
+    bool                      m_started;
+
+    FlyCapture2::Camera      *m_camera;
+    FlyCapture2::CameraInfo   m_camera_info;
+    FlyCapture2::Error        m_error;
+    const FlyCapture2::Error  m_c_error;
+
+    FlyCapture2::Format7Info  m_fmt7_info;
+    FlyCapture2::Format7ImageSettings m_fmt7_image_settings;
+    FlyCapture2::Format7PacketInfo m_fmt7_packet_info;
+
+    FlyCapture2::Property     m_frame_rate_property,
+                              m_exp_time_property,
+                              m_gain_property;
     
-    string                  m_camera_ip;
-
-    FlyCapture2::Camera		*m_pgcam;
-
+    FlyCapture2::PropertyInfo m_frame_rate_property_info,
+                              m_exp_time_property_info,
+                              m_gain_property_info;
 };
 } // namespace PointGrey
 } // namespace lima

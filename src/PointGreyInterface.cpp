@@ -29,18 +29,12 @@ using namespace std;
 /*******************************************************************
  * \brief DetInfoCtrlObj constructor
  *******************************************************************/
-DetInfoCtrlObj::DetInfoCtrlObj(Camera& cam)   :m_cam(cam)
+DetInfoCtrlObj::DetInfoCtrlObj(Camera& cam)
+    : m_cam(cam)
 {
     DEB_CONSTRUCTOR();
 }
 
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-DetInfoCtrlObj::~DetInfoCtrlObj()
-{
-    DEB_DESTRUCTOR();
-}
 
 //-----------------------------------------------------
 //
@@ -66,7 +60,7 @@ void DetInfoCtrlObj::getDetectorImageSize(Size& size)
 void DetInfoCtrlObj::getDefImageType(ImageType& image_type)
 {
     DEB_MEMBER_FUNCT();
-    m_cam.getImageType(image_type);
+    image_type = Bpp16;
 }
 
 //-----------------------------------------------------
@@ -75,7 +69,23 @@ void DetInfoCtrlObj::getDefImageType(ImageType& image_type)
 void DetInfoCtrlObj::getCurrImageType(ImageType& image_type)
 {
     DEB_MEMBER_FUNCT();
-    m_cam.getImageType(image_type);
+
+    VideoMode video_mode;
+    m_cam.getVideoMode(video_mode);
+
+    switch (video_mode)
+    {
+    case Y8:
+    	image_type = Bpp8;
+    	break;
+    case Y16:
+    	image_type = Bpp16;
+    	break;
+    default:
+    	// TODO: handle error
+    	return;
+    }
+    DEB_RETURN() << DEB_VAR1(image_type);
 }
 
 //-----------------------------------------------------
@@ -84,17 +94,31 @@ void DetInfoCtrlObj::getCurrImageType(ImageType& image_type)
 void DetInfoCtrlObj::setCurrImageType(ImageType image_type)
 {
     DEB_MEMBER_FUNCT();
-    m_cam.setImageType(image_type);
+    DEB_PARAM() << DEB_VAR1(image_type);
 
+    VideoMode video_mode;
+    switch (image_type)
+    {
+    case Bpp8:
+    	video_mode = Y8;
+    	break;
+    case Bpp16:
+    	video_mode = Y16;
+    	break;
+    default:
+    	// TODO: handle error
+    	return;
+    }
+    m_cam.setVideoMode(video_mode);
 }
 
 //-----------------------------------------------------
-// TODO: check!
+//
 //-----------------------------------------------------
-void DetInfoCtrlObj::getPixelSize(double& x_size,double& y_size)
+void DetInfoCtrlObj::getPixelSize(double& x_size, double& y_size)
 {
     DEB_MEMBER_FUNCT();
-    x_size = y_size = 55.0e-6;
+    x_size = y_size = -1.; // TODO: don't know
 }
 
 //-----------------------------------------------------
@@ -121,7 +145,7 @@ void DetInfoCtrlObj::getDetectorModel(std::string& model)
 void DetInfoCtrlObj::registerMaxImageSizeCallback(HwMaxImageSizeCallback& cb)
 {
     DEB_MEMBER_FUNCT();
-    //m_cam.registerMaxImageSizeCallback(cb);
+    m_cam.registerMaxImageSizeCallback(cb);
 }
 
 //-----------------------------------------------------
@@ -130,25 +154,20 @@ void DetInfoCtrlObj::registerMaxImageSizeCallback(HwMaxImageSizeCallback& cb)
 void DetInfoCtrlObj::unregisterMaxImageSizeCallback(HwMaxImageSizeCallback& cb)
 {
     DEB_MEMBER_FUNCT();
-    //m_cam.unregisterMaxImageSizeCallback(cb);
+    m_cam.unregisterMaxImageSizeCallback(cb);
 }
 
 /*******************************************************************
  * \brief SyncCtrlObj constructor
  *******************************************************************/
 SyncCtrlObj::SyncCtrlObj(Camera& cam)
-    : HwSyncCtrlObj(), m_cam(cam)
+    : HwSyncCtrlObj()
+    , m_cam(cam)
 {
     DEB_CONSTRUCTOR();
+    m_cam.m_sync = this;
 }
 
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-SyncCtrlObj::~SyncCtrlObj()
-{
-    DEB_DESTRUCTOR();
-}
 
 //-----------------------------------------------------
 //
@@ -156,6 +175,7 @@ SyncCtrlObj::~SyncCtrlObj()
 bool SyncCtrlObj::checkTrigMode(TrigMode trig_mode)
 {
     DEB_MEMBER_FUNCT();
+    return true;
 }
 
 //-----------------------------------------------------
@@ -163,7 +183,7 @@ bool SyncCtrlObj::checkTrigMode(TrigMode trig_mode)
 //-----------------------------------------------------
 void SyncCtrlObj::setTrigMode(TrigMode trig_mode)
 {
-    DEB_MEMBER_FUNCT();    
+    DEB_MEMBER_FUNCT();
     if (!checkTrigMode(trig_mode))
         THROW_HW_ERROR(InvalidValue) << "Invalid " << DEB_VAR1(trig_mode);
     m_cam.setTrigMode(trig_mode);
@@ -183,6 +203,8 @@ void SyncCtrlObj::getTrigMode(TrigMode& trig_mode)
 void SyncCtrlObj::setExpTime(double exp_time)
 {
     m_cam.setExpTime(exp_time);
+    ValidRangesType valid_ranges;
+    getValidRanges(valid_ranges);
 }
 
 //-----------------------------------------------------
@@ -234,7 +256,7 @@ void SyncCtrlObj::getValidRanges(ValidRangesType& valid_ranges)
     double min_time;
     double max_time;
 
-    m_cam.getExposureTimeRange(min_time, max_time);
+    m_cam.getExpTimeRange(min_time, max_time);
     valid_ranges.min_exp_time = min_time;
     valid_ranges.max_exp_time = max_time;
 
@@ -242,8 +264,6 @@ void SyncCtrlObj::getValidRanges(ValidRangesType& valid_ranges)
     valid_ranges.min_lat_time = min_time;
     valid_ranges.max_lat_time = max_time;
 }
-
-
 
 /*******************************************************************
  * \brief RoiCtrlObj constructor
@@ -253,14 +273,6 @@ RoiCtrlObj::RoiCtrlObj(Camera& cam)
     : m_cam(cam)
 {
     DEB_CONSTRUCTOR();
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-RoiCtrlObj::~RoiCtrlObj()
-{
-    DEB_DESTRUCTOR();
 }
 
 //-----------------------------------------------------
@@ -296,37 +308,111 @@ void RoiCtrlObj::getRoi(Roi& roi)
 /*******************************************************************
  * \brief BinCtrlObj constructor
  *******************************************************************/
-BinCtrlObj::BinCtrlObj(Camera &cam) : m_cam(cam) {}
+BinCtrlObj::BinCtrlObj(Camera &cam)
+    : m_cam(cam)
+{
+    DEB_CONSTRUCTOR();
+}
 
 void BinCtrlObj::setBin(const Bin& aBin)
 {
-  m_cam.setBin(aBin);
+    m_cam.setBin(aBin);
 }
 
 void BinCtrlObj::getBin(Bin &aBin)
 {
-  m_cam.getBin(aBin);
+    m_cam.getBin(aBin);
 }
 
 void BinCtrlObj::checkBin(Bin &aBin)
 {
-  m_cam.checkBin(aBin);
+    m_cam.checkBin(aBin);
 }
+
+
+/*******************************************************************
+ * \brief VideoCtrlObj constructor
+ *******************************************************************/
+VideoCtrlObj::VideoCtrlObj(Camera &cam)
+    : m_cam(cam)
+    , m_live(false)
+{
+    DEB_CONSTRUCTOR();
+    m_cam.m_video = this;
+}
+
+
+void VideoCtrlObj::getSupportedVideoMode(std::list<VideoMode> &mode_list) const
+{
+    DEB_MEMBER_FUNCT();
+    mode_list.push_back(Y8);
+    mode_list.push_back(Y16);
+}
+
+void VideoCtrlObj::getVideoMode(VideoMode& mode) const
+{
+    DEB_MEMBER_FUNCT();
+    m_cam.getVideoMode(mode);
+    DEB_RETURN() << DEB_VAR1(mode);
+}
+
+void VideoCtrlObj::setVideoMode(VideoMode mode)
+{
+    DEB_MEMBER_FUNCT();
+    DEB_PARAM() << DEB_VAR1(mode);
+    m_cam.setVideoMode(mode);
+}
+
+void VideoCtrlObj::getLive(bool &live) const
+{
+    DEB_MEMBER_FUNCT();
+    live = m_live;
+    DEB_RETURN() << DEB_VAR1(live);
+}
+
+void VideoCtrlObj::setLive(bool live)
+{
+    DEB_MEMBER_FUNCT();
+    DEB_PARAM() << DEB_VAR1(live);
+    m_live = live;
+    if (live){
+        m_cam.setNbFrames(0);
+	m_cam.startAcq();
+    }
+    else
+        m_cam.stopAcq();
+}
+
+void VideoCtrlObj::getGain(double &gain) const
+{
+    DEB_MEMBER_FUNCT();
+    m_cam.getGain(gain);
+    DEB_RETURN() << DEB_VAR1(gain);
+}
+
+void VideoCtrlObj::setGain(double gain)
+{
+    DEB_MEMBER_FUNCT();
+    DEB_PARAM() << DEB_VAR1(gain);
+    m_cam.setGain(gain);
+}
+
 /*******************************************************************
  * \brief Hw Interface constructor
  *******************************************************************/
 
 Interface::Interface(Camera& cam)
-  : m_cam(cam),m_det_info(cam),
-    m_sync(cam),m_bin(cam),m_roi(cam)
+    : m_cam(cam)
+    , m_det_info(cam)
+    , m_sync(cam)
+    , m_bin(cam)
+    , m_roi(cam)
+    , m_video(cam)
 {
     DEB_CONSTRUCTOR();
 
     HwDetInfoCtrlObj *det_info = &m_det_info;
     m_cap_list.push_back(HwCap(det_info));
-
-    HwBufferCtrlObj *buffer = cam.getBufferCtrlObj();
-    m_cap_list.push_back(HwCap(buffer));
     
     HwSyncCtrlObj *sync = &m_sync;
     m_cap_list.push_back(HwCap(sync));
@@ -334,20 +420,16 @@ Interface::Interface(Camera& cam)
     HwRoiCtrlObj *roi = &m_roi;
     m_cap_list.push_back(HwCap(roi));
 
-	if(m_cam.isBinnigAvailable())
-	{
-		HwBinCtrlObj *bin = &m_bin;
-		m_cap_list.push_back(HwCap(bin));
-	}
+    HwVideoCtrlObj *video = &m_video;
+    m_cap_list.push_back(HwCap(video));
+
+    HwBufferCtrlObj *buffer = &(m_video.getHwBufferCtrlObj());
+    m_cap_list.push_back(HwCap(buffer));
+
+    HwBinCtrlObj *bin = &m_bin;
+    m_cap_list.push_back(HwCap(bin));
 }
 
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-Interface::~Interface()
-{
-    DEB_DESTRUCTOR();
-}
 
 //-----------------------------------------------------
 //
@@ -365,6 +447,7 @@ void Interface::reset(ResetLevel reset_level)
 {
     DEB_MEMBER_FUNCT();
     DEB_PARAM() << DEB_VAR1(reset_level);
+    m_cam.reset();
 }
 
 //-----------------------------------------------------
@@ -399,32 +482,33 @@ void Interface::stopAcq()
 //-----------------------------------------------------
 void Interface::getStatus(StatusType& status)
 {
-	DEB_MEMBER_FUNCT();
-	Camera::Status pg_status = Camera::Ready;
+    DEB_MEMBER_FUNCT();
+    Camera::Status pg_status = Camera::Ready;
     m_cam.getStatus(pg_status);
     switch (pg_status)
     {
-        case Camera::Ready:
-            status.acq = AcqReady;
-            status.det = DetIdle;
-            break;
-        case Camera::Exposure:
-            status.det = DetExposure;
-            status.acq = AcqRunning;
-            break;
-        case Camera::Readout:
-            status.det = DetReadout;
-            status.acq = AcqRunning;
-            break;
-        case Camera::Latency:
-            status.det = DetLatency;
-            status.acq = AcqRunning;
-            break;
-        case Camera::Fault:
-        	status.det = DetFault;
-        	status.acq = AcqFault;
+    case Camera::Ready:
+        status.det = DetIdle;
+	status.acq = AcqReady;
+	break;
+    case Camera::Exposure:
+        status.det = DetExposure;
+	status.acq = AcqRunning;
+	break;
+    case Camera::Readout:
+        status.det = DetReadout;
+	status.acq = AcqRunning;
+	break;
+    case Camera::Latency:
+        status.det = DetLatency;
+	status.acq = AcqRunning;
+	break;
+    case Camera::Fault:
+        status.det = DetFault;
+	status.acq = AcqFault;
     }
     status.det_mask = DetExposure | DetReadout | DetLatency;
+    DEB_RETURN() << DEB_VAR1(status);
 }
 
 //-----------------------------------------------------
@@ -441,24 +525,11 @@ int Interface::getNbHwAcquiredFrames()
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Interface::getFrameRate(double& frame_rate)
-{
-    DEB_MEMBER_FUNCT();
-    m_cam.getFrameRate(frame_rate);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Interface::setTimeout(int TO)
-{
-    m_cam.setTimeout(TO);
-}
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Interface::setGain(double gain) { m_cam.setGain(gain); }
-void Interface::getGain(double& gain) const { m_cam.getGain(gain); }
-
 void Interface::setAutoGain(bool auto_gain) { m_cam.setAutoGain(auto_gain); }
 void Interface::getAutoGain(bool& auto_gain) const { m_cam.getAutoGain(auto_gain); }
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Interface::setAutoExpTime(bool auto_exp_time) { m_cam.setAutoExpTime(auto_exp_time); }
+void Interface::getAutoExpTime(bool& auto_exp_time) const { m_cam.getAutoExpTime(auto_exp_time); }

@@ -13,58 +13,54 @@ namespace PointGrey
       Ready, Exposure, Readout, Latency,
     };
 
-    Camera(const std::string& camera_ip,int mtu_size = -1);
+    Camera(const std::string& camera_ip, const int camera_serial_no = 0);
     ~Camera();
 
     void prepareAcq();
     void startAcq();
     void stopAcq();
 
+    void getStatus(PointGrey::Camera::Status& status /Out/);
+    
     // -- detector info
-    void getImageType(ImageType& type /Out/);
-
     void getDetectorType(std::string& type /Out/);
     void getDetectorModel(std::string& model /Out/);
     void getDetectorImageSize(Size& size /Out/);
-    HwBufferCtrlObj* getBufferCtrlObj();
 	
-    void setTrigMode(TrigMode  mode);
+    // -- sync
     void getTrigMode(TrigMode& mode /Out/);
-	
+    void setTrigMode(TrigMode  mode);
+
+    void getExpTime(double& exp_time /Out/);	
     void setExpTime(double  exp_time);
-    void getExpTime(double& exp_time /Out/);
+    void getExpTimeRange(double& min_exp_time /Out/, double& max_exp_time /Out/) const;
 
-    void setLatTime(double  lat_time);
     void getLatTime(double& lat_time /Out/);
+    void setLatTime(double  lat_time);
+    void getLatTimeRange(double& min_lat_time /Out/, double& max_lat_time /Out/) const;
 
-    void getExposureTimeRange(double& min_expo /Out/, double& max_expo /Out/) const;
-    void getLatTimeRange(double& min_lat /Out/, double& max_lat /Out/) const;
-
-    void setNbFrames(int  nb_frames);
     void getNbFrames(int& nb_frames /Out/);
-	
+    void setNbFrames(int  nb_frames);
+
+    // -- roi	
     void checkRoi(const Roi& set_roi, Roi& hw_roi /Out/);
+    void getRoi(Roi& hw_roi /Out/); 
     void setRoi(const Roi& set_roi);
-    void getRoi(Roi& hw_roi /Out/);	
 
+    // -- bin
     void checkBin(Bin& /In,Out/);
-    void setBin(const Bin&);
     void getBin(Bin& /Out/);
+    void setBin(const Bin&);
 
-    void setInterPacketDelay(int ipd);
-
-    void setFrameTransmissionDelay(int ftd);
-
-    void setAutoGain(bool auto_gain);
-    void getAutoGain(bool& auto_gain /Out/) const;
-
+    // -- video
+    void getGain(double& gain /Out/);
     void setGain(double gain);
-    void getGain(double& gain /Out/) const;
 
-    void getStatus(PointGrey::Camera::Status& status /Out/);
-	
-    void getFrameRate(double& frame_rate /Out/);
-    void setTimeout(int TO);
+    // -- camera specific
+    void getAutoExpTime(bool &auto_frame_rate /Out/) const;
+    void setAutoExpTime(bool auto_exp_time);
+
+    void getAutoGain(bool& auto_gain /Out/) const;
+    void setAutoGain(bool auto_gain);    
   };
-
 };
