@@ -19,7 +19,6 @@ Camera::Camera(const std::string& camera_ip, const int camera_serial_no)
     , m_started(false)
     , m_continue_acq(false)
     , m_video(NULL)
-    , m_sync(NULL)
     // camera properties
     , m_frame_rate_property(FlyCapture2::FRAME_RATE)
     , m_exp_time_property(FlyCapture2::SHUTTER)

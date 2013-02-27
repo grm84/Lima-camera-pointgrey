@@ -165,7 +165,6 @@ SyncCtrlObj::SyncCtrlObj(Camera& cam)
     , m_cam(cam)
 {
     DEB_CONSTRUCTOR();
-    m_cam.m_sync = this;
 }
 
 

@@ -39,11 +39,8 @@ namespace PointGrey
  * \brief object controlling the Point Grey camera via Pylon driver
  *******************************************************************/
 class VideoCtrlObj;
-class SyncCtrlObj;
 class Camera : public HwMaxImageSizeCallbackGen
 {
-    friend class SyncCtrlObj;
-
     DEB_CLASS_NAMESPC(DebModCamera, "Camera", "PointGrey");
     friend class VideoCtrlObj;
  public:
@@ -117,7 +114,6 @@ class Camera : public HwMaxImageSizeCallbackGen
     static void _newFrameCBK(FlyCapture2::Image* image, const void *data);
     void _newFrame(FlyCapture2::Image *image);
 
-    SyncCtrlObj              *m_sync;
     VideoCtrlObj             *m_video;
 
     Camera::Status            m_status;
@@ -128,8 +124,7 @@ class Camera : public HwMaxImageSizeCallbackGen
 
     FlyCapture2::Camera      *m_camera;
     FlyCapture2::CameraInfo   m_camera_info;
-    FlyCapture2::Error        m_error;
-    const FlyCapture2::Error  m_c_error;
+    FlyCapture2::Error 		  m_error;
 
     FlyCapture2::Format7Info  m_fmt7_info;
     FlyCapture2::Format7ImageSettings m_fmt7_image_settings;
