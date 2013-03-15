@@ -57,7 +57,7 @@ namespace PointGrey
     void setGain(double gain);
 
     // -- camera specific
-    void getAutoExpTime(bool &auto_frame_rate /Out/) const;
+    void getAutoExpTime(bool& auto_exp_time /Out/) const;
     void setAutoExpTime(bool auto_exp_time);
 
     void getAutoGain(bool& auto_gain /Out/) const;

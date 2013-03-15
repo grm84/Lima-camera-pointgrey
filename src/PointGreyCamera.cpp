@@ -6,8 +6,19 @@ using namespace lima::PointGrey;
 using namespace std;
 
 //---------------------------
-//- utility functions
+//- _AcqThread class
 //---------------------------
+class Camera::_AcqThread : public Thread
+{
+    DEB_CLASS_NAMESPC(DebModCamera, "Camera", "_AcqThread");
+public:
+    _AcqThread(Camera &aCam);
+    virtual ~_AcqThread();
+protected:
+    virtual void threadFunction();
+private:
+    Camera &m_cam;
+};
 
 //---------------------------
 //
@@ -15,10 +26,12 @@ using namespace std;
 Camera::Camera(const std::string& camera_ip, const int camera_serial_no)
     : m_nb_frames(1)
     , m_status(Ready)
+    , m_quit(false)
+    , m_acq_started(false)
+    , m_thread_running(true)
     , m_image_number(0)
-    , m_started(false)
-    , m_continue_acq(false)
     , m_video(NULL)
+    , m_camera(NULL)
     // camera properties
     , m_frame_rate_property(FlyCapture2::FRAME_RATE)
     , m_exp_time_property(FlyCapture2::SHUTTER)
@@ -74,8 +87,8 @@ Camera::Camera(const std::string& camera_ip, const int camera_serial_no)
     // query for supported pixel formats
     static const FlyCapture2::PixelFormat mono_formats[] = {
         FlyCapture2::PIXEL_FORMAT_MONO16,
-	FlyCapture2::PIXEL_FORMAT_MONO8,
-	FlyCapture2::UNSPECIFIED_PIXEL_FORMAT // == 0
+        FlyCapture2::PIXEL_FORMAT_MONO8,
+        FlyCapture2::UNSPECIFIED_PIXEL_FORMAT // == 0
     };
 
     const FlyCapture2::PixelFormat *pixel_format;
@@ -111,6 +124,8 @@ Camera::Camera(const std::string& camera_ip, const int camera_serial_no)
     if ( m_error != FlyCapture2::PGRERROR_OK)
     	THROW_HW_ERROR(Error) << "Unable to apply image format settings:" << m_error.GetDescription();
 
+    // Force the camera to PGR's Y16 endianness
+    _forcePGRY16Mode();
 
     // get frame rate property
     _getPropertyInfo(&m_frame_rate_property_info);
@@ -125,12 +140,13 @@ Camera::Camera(const std::string& camera_ip, const int camera_serial_no)
 
     _setProperty(&m_frame_rate_property);
 
-    // get exp time and property
+    // get exp time property
     _getPropertyInfo(&m_exp_time_property_info);
     _getProperty(&m_exp_time_property);
 
     // set auto exp time, if supported
     m_exp_time_property.onOff = true;
+    m_exp_time_property.absControl = true;
     m_exp_time_property.autoManualMode = m_exp_time_property_info.autoSupported;
 
     _setProperty(&m_exp_time_property);
@@ -141,9 +157,14 @@ Camera::Camera(const std::string& camera_ip, const int camera_serial_no)
 
     // set auto gain, if supported
     m_gain_property.onOff = true;
+    m_gain_property.absControl = true;
     m_gain_property.autoManualMode = m_gain_property_info.autoSupported;
 
     _setProperty(&m_gain_property);
+
+    //Acquisition  Thread
+    m_acq_thread = new _AcqThread(*this);
+    m_acq_thread->start();
 }
 
 //---------------------------
@@ -152,7 +173,7 @@ Camera::Camera(const std::string& camera_ip, const int camera_serial_no)
 Camera::~Camera()
 {
     DEB_DESTRUCTOR();
-    // disconnect from camera
+    delete m_acq_thread;
     m_camera->Disconnect();
     delete m_camera;
 }
@@ -171,15 +192,16 @@ void Camera::startAcq()
     DEB_MEMBER_FUNCT();
 
     DEB_TRACE() << "Start acquisition";
-    m_continue_acq = true;
     m_video->getBuffer().setStartTimestamp(Timestamp::now());
 
-    m_error = m_camera->StartCapture(_newFrameCBK, (void *)this);
+    m_error = m_camera->StartCapture();
     if (m_error != FlyCapture2::PGRERROR_OK)
     	THROW_HW_ERROR(Error) << "Unable to start image capture" << m_error.GetDescription();
 
-    m_status = Camera::Readout;
-    m_started = true;
+    // Start acquisition thread
+    AutoMutex lock(m_cond.mutex());
+    m_acq_started = true;
+    m_cond.broadcast();
 }
 
 //---------------------------
@@ -188,20 +210,7 @@ void Camera::startAcq()
 void Camera::stopAcq()
 {
     DEB_MEMBER_FUNCT();
-
-    DEB_TRACE() << "Stop acquisition";
-
-    if (!m_started)
-        return;
-
-    m_continue_acq = false;
-
-    m_error = m_camera->StopCapture();
-    if (m_error != FlyCapture2::PGRERROR_OK)
-        THROW_HW_ERROR(Error) << "Unable to stop image capture" << m_error.GetDescription();
-
-    m_status = Camera::Ready;
-    m_started = false;
+    _stopAcq(false);
 }
 
 //-----------------------------------------------------
@@ -213,7 +222,6 @@ void Camera::getDetectorImageSize(Size& size)
     size = Size(m_fmt7_info.maxWidth, m_fmt7_info.maxHeight);
     DEB_RETURN() << DEB_VAR1(size);
 }
-
 
 //-----------------------------------------------------
 //
@@ -324,7 +332,7 @@ void Camera::setExpTime(double exp_time)
     DEB_PARAM() << DEB_VAR1(exp_time);
 
     m_exp_time_property.autoManualMode = false;
-    m_exp_time_property.absValue = 1000 * exp_time;
+    m_exp_time_property.absValue = 1.0E3 * exp_time;
 
     _setProperty(&m_exp_time_property);
 }
@@ -352,7 +360,7 @@ void Camera::setAutoExpTime(bool auto_exp_time)
     if (!m_exp_time_property_info.autoSupported )
     {
         DEB_WARNING() << "Auto exposure is not supported";
-	return;
+        return;
     }
 
     m_exp_time_property.autoManualMode = auto_exp_time;
@@ -444,8 +452,9 @@ void Camera::getNbHwAcquiredFrames(int &nb_acq_frames)
 void Camera::getStatus(Camera::Status& status)
 {
     DEB_MEMBER_FUNCT();
+    AutoMutex lock(m_cond.mutex());
     status = m_status;
-    DEB_RETURN() << DEB_VAR1(status);
+    DEB_RETURN() << DEB_VAR1(DEB_HEX(status));
 }
 
 //-----------------------------------------------------
@@ -503,14 +512,6 @@ void Camera::setBin(const Bin &aBin)
     DEB_RETURN() << DEB_VAR1(aBin);
 }
 
-//---------------------------
-//
-//---------------------------
-void Camera::reset(void)
-{
-    DEB_MEMBER_FUNCT();
-}
-
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
@@ -562,7 +563,10 @@ void Camera::setVideoMode(VideoMode mode)
     	// no changes
     	return;
 
-    bool pause_acq = m_started;
+    AutoMutex lock(m_cond.mutex());
+    bool pause_acq = m_acq_started;
+    lock.unlock();
+
     if (pause_acq)
     	stopAcq();
 
@@ -679,49 +683,154 @@ void Camera::_setProperty(FlyCapture2::Property *property)
         THROW_HW_ERROR(Error) << "Failed to set camera property: " << m_error.GetDescription();
 }
 
-//---------------------------
+//-----------------------------------------------------
 //
-//---------------------------
-void Camera::_newFrameCBK(FlyCapture2::Image* image, const void *data)
-{
-    DEB_STATIC_FUNCT();
-    Camera *camera = (Camera*)data;
-    camera->_newFrame(image);
-}
-
-//---------------------------
-//
-//---------------------------
-void Camera::_newFrame(FlyCapture2::Image* image)
+//-----------------------------------------------------
+void Camera::_setStatus(Camera::Status status,bool force)
 {
     DEB_MEMBER_FUNCT();
-    if(!m_continue_acq) return;
+    AutoMutex alock(m_cond.mutex());
+    if(force || m_status != Camera::Fault)
+        m_status = status;
+}
 
-    // TODO: do we need mutex protection? probably.
-    unsigned int rows, cols, stride;
-    FlyCapture2::PixelFormat pixel_format;
-    FlyCapture2::BayerTileFormat bayer_format;
+//---------------------------
+//- Camera::_stopAcq()
+//---------------------------
+void Camera::_stopAcq(bool internalFlag)
+{
+    DEB_MEMBER_FUNCT();
+    AutoMutex lock(m_cond.mutex());
 
-    image->GetDimensions(&rows, &cols, &stride, &pixel_format, &bayer_format);
+    if(m_status == Camera::Ready)
+        return;
 
-    VideoMode mode;
-    switch(pixel_format)
+    m_acq_started = false;
+
+	// wait for the acq thread to finish
+    while(!internalFlag && m_thread_running)
+        m_cond.wait();
+
+    lock.unlock();
+
+    //Let the acq thread stop the acquisition
+    if(!internalFlag)
+        return;
+
+    DEB_TRACE() << "Stop acquisition";
+    m_error = m_camera->StopCapture();
+    if (m_error != FlyCapture2::PGRERROR_OK)
+        THROW_HW_ERROR(Error) << "Unable to stop image capture: " << m_error.GetDescription();
+
+    _setStatus(Camera::Ready, false);
+}
+
+void Camera::_forcePGRY16Mode()
+{
+    DEB_MEMBER_FUNCT();
+    const unsigned int k_imageDataFmtReg = 0x1048;
+    unsigned int value = 0;
+    m_error = m_camera->ReadRegister(k_imageDataFmtReg, &value);
+    if (m_error != FlyCapture2::PGRERROR_OK)
     {
-    case FlyCapture2::PIXEL_FORMAT_MONO8:
-        mode = Y8;
-	break;
-    case FlyCapture2::PIXEL_FORMAT_MONO16:
-        mode = Y16;
-	break;
-    default:
-        DEB_ERROR() << "Format not supported: " << DEB_VAR1(pixel_format);
-	stopAcq();
-	return;
+        THROW_HW_ERROR(Error) << "Failed to read camera register: " << m_error.GetDescription();
     }
 
-    m_continue_acq =  m_video->callNewImage((char *)image->GetData(), cols, rows, mode);
-    m_image_number++;
+    value &= ~0x1;
 
-    if (m_nb_frames && m_image_number == m_nb_frames)
-        stopAcq();
+    m_error = m_camera->WriteRegister(k_imageDataFmtReg, value);
+    if (m_error != FlyCapture2::PGRERROR_OK)
+    {
+        THROW_HW_ERROR(Error) << "Failed to write camera register: " << m_error.GetDescription();
+    }
 }
+
+//---------------------------
+//	Acquisition thread
+//---------------------------
+Camera::_AcqThread::_AcqThread(Camera &cam) : m_cam(cam)
+{
+    pthread_attr_setscope(&m_thread_attr,PTHREAD_SCOPE_PROCESS);
+}
+
+Camera::_AcqThread::~_AcqThread()
+{
+    AutoMutex lock(m_cam.m_cond.mutex());
+    m_cam.m_quit = true;
+    m_cam.m_cond.broadcast();
+    lock.unlock();
+
+    join();
+}
+
+void Camera::_AcqThread::threadFunction()
+{
+    DEB_MEMBER_FUNCT();
+    FlyCapture2::Error error;
+    FlyCapture2::Image image;
+    VideoMode mode;
+
+    sched_param param;
+    param.sched_priority = sched_get_priority_max(SCHED_FIFO);
+    if(pthread_setschedparam(pthread_self(), SCHED_FIFO, &param))
+    {
+    	DEB_ERROR() << "Could not set FIFO scheduling for acquisition thread";
+    }
+
+    AutoMutex lock(m_cam.m_cond.mutex());
+
+    while(true)
+    {
+        while(!m_cam.m_acq_started && !m_cam.m_quit)
+        {
+		    DEB_TRACE() << "wait";
+		    m_cam.m_thread_running = false;
+		    m_cam.m_cond.broadcast();
+		    m_cam.m_cond.wait();
+        }
+        if (m_cam.m_quit) return;
+
+        m_cam.m_thread_running = true;
+        m_cam.m_status = Camera::Exposure;
+        lock.unlock();
+
+        DEB_TRACE() << "Run";
+        bool continue_acq = true;
+
+        continue_acq = true;
+
+        while(continue_acq && (!m_cam.m_nb_frames || m_cam.m_image_number < m_cam.m_nb_frames))
+        {
+            // check if acquisition has been stopped
+    	    if (!m_cam.m_acq_started)
+    	        break;
+
+            error = m_cam.m_camera->RetrieveBuffer(&image);
+            if (error == FlyCapture2::PGRERROR_OK)
+            {
+                // Grabbing was successful, process image
+                m_cam._setStatus(Camera::Readout, false);
+
+                DEB_TRACE() << "image# " << m_cam.m_image_number << " acquired";
+
+                m_cam.m_video->getVideoMode(mode);
+
+                continue_acq = m_cam.m_video->callNewImage((char *)image.GetData(), image.GetCols(), image.GetRows(), mode);
+                m_cam.m_image_number++;
+            }
+            else if (error == FlyCapture2::PGRERROR_IMAGE_CONSISTENCY_ERROR)
+            {
+                DEB_WARNING() << "No image acquired: " << error.GetDescription();
+            }
+            else
+            {
+                DEB_ERROR() << "No image acquired: " << error.GetDescription();
+                m_cam._setStatus(Camera::Fault, false);
+                continue_acq = false;
+            }
+        }
+        m_cam._stopAcq(true);
+        lock.lock();
+    }
+}
+

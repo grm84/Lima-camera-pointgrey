@@ -41,6 +41,8 @@ namespace PointGrey
 class VideoCtrlObj;
 class Camera : public HwMaxImageSizeCallbackGen
 {
+    friend class Interface;
+
     DEB_CLASS_NAMESPC(DebModCamera, "Camera", "PointGrey");
     friend class VideoCtrlObj;
  public:
@@ -58,7 +60,6 @@ class Camera : public HwMaxImageSizeCallbackGen
     void stopAcq();
 
     void getStatus(Camera::Status& status);
-    void reset(void);
     
     // detector info object
     void getDetectorType(std::string& type);
@@ -111,16 +112,24 @@ class Camera : public HwMaxImageSizeCallbackGen
     void _setProperty(FlyCapture2::Property *property);
 
  private:
-    static void _newFrameCBK(FlyCapture2::Image* image, const void *data);
-    void _newFrame(FlyCapture2::Image *image);
+    class _AcqThread;
+    friend class _AcqThread;
+
+    void _setStatus(Camera::Status status,bool force);
+    void _stopAcq(bool internalFlag);
+    void _forcePGRY16Mode();
 
     VideoCtrlObj             *m_video;
 
     Camera::Status            m_status;
     int                       m_nb_frames;
     int                       m_image_number;
-    bool                      m_continue_acq;
-    bool                      m_started;
+
+    _AcqThread               *m_acq_thread;
+    Cond                      m_cond;
+    volatile bool             m_quit;
+    volatile bool             m_acq_started;
+    volatile bool             m_thread_running;
 
     FlyCapture2::Camera      *m_camera;
     FlyCapture2::CameraInfo   m_camera_info;

@@ -376,7 +376,7 @@ void VideoCtrlObj::setLive(bool live)
     m_live = live;
     if (live){
         m_cam.setNbFrames(0);
-	m_cam.startAcq();
+        m_cam.startAcq();
     }
     else
         m_cam.stopAcq();
@@ -446,7 +446,8 @@ void Interface::reset(ResetLevel reset_level)
 {
     DEB_MEMBER_FUNCT();
     DEB_PARAM() << DEB_VAR1(reset_level);
-    m_cam.reset();
+    stopAcq();
+    m_cam._setStatus(Camera::Ready,true);
 }
 
 //-----------------------------------------------------
