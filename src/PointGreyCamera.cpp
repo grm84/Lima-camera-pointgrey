@@ -801,13 +801,13 @@ void Camera::_AcqThread::threadFunction()
 
         while(continue_acq && (!m_cam.m_nb_frames || m_cam.m_image_number < m_cam.m_nb_frames))
         {
-            // check if acquisition has been stopped
-    	    if (!m_cam.m_acq_started)
-    	        break;
-
             error = m_cam.m_camera->RetrieveBuffer(&image);
             if (error == FlyCapture2::PGRERROR_OK)
             {
+                // check if acquisition has been stopped
+        	    if (!m_cam.m_acq_started)
+        	        break;
+
                 // Grabbing was successful, process image
                 m_cam._setStatus(Camera::Readout, false);
 
