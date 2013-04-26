@@ -84,29 +84,13 @@ Camera::Camera(const std::string& camera_ip, const int camera_serial_no)
     if (!fmt7_supported)
     	THROW_HW_ERROR(Error) << "Format7 is not supported: ";
 
-    // query for supported pixel formats
-    static const FlyCapture2::PixelFormat mono_formats[] = {
-        FlyCapture2::PIXEL_FORMAT_MONO16,
-        FlyCapture2::PIXEL_FORMAT_MONO8,
-        FlyCapture2::UNSPECIFIED_PIXEL_FORMAT // == 0
-    };
-
-    const FlyCapture2::PixelFormat *pixel_format;
-
-    for (pixel_format=mono_formats; *pixel_format; pixel_format++)
-        if ((*pixel_format & m_fmt7_info.pixelFormatBitField) > 0)
-	    break;
-
-    if (!*pixel_format)
-    	THROW_HW_ERROR(Error) << "Unable to set pixel format for the camera!";
-
     // Set image format settings
     m_fmt7_image_settings.mode = m_fmt7_info.mode;
     m_fmt7_image_settings.offsetX = 0;
     m_fmt7_image_settings.offsetY = 0;
     m_fmt7_image_settings.width = m_fmt7_info.maxWidth;
     m_fmt7_image_settings.height = m_fmt7_info.maxHeight;
-    m_fmt7_image_settings.pixelFormat = *pixel_format;
+    m_fmt7_image_settings.pixelFormat = FlyCapture2::PIXEL_FORMAT_MONO8;
 
     bool valid;
 
