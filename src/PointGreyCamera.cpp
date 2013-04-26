@@ -23,7 +23,9 @@ private:
 //---------------------------
 //
 //---------------------------
-Camera::Camera(const int camera_serial)
+Camera::Camera(const int camera_serial,
+               const int packet_size,
+               const int packet_delay)
     : m_nb_frames(1)
     , m_status(Ready)
     , m_quit(false)
