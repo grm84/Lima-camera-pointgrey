@@ -70,6 +70,12 @@ Camera::Camera(const int camera_serial,
     if (m_error != FlyCapture2::PGRERROR_OK)
     	THROW_HW_ERROR(Error) << "Failed to get camera info: "<<  m_error.GetDescription();
 
+    if (packet_size > 0)
+    	setPacketSize(packet_size);
+
+    if (packet_delay > 0)
+    	setPacketDelay(packet_delay);
+
     _getImageSettingsInfo();
 
     // Setup default image format
@@ -178,6 +184,80 @@ void Camera::_applyImageSettings()
     if (m_image_settings.pixelFormat == FlyCapture2::PIXEL_FORMAT_MONO16)
     	// Force the camera to PGR's Y16 endianness
     	_forcePGRY16Mode();
+}
+
+//---------------------------
+//
+//---------------------------
+void Camera::getPacketSize(int& packet_size)
+{
+    DEB_MEMBER_FUNCT();
+#ifdef USE_GIGE
+    FlyCapture2::GigEProperty property;
+    property.propType = FlyCapture2::PACKET_SIZE;
+
+    m_error = m_camera->GetGigEProperty(&property);
+    if ( m_error != FlyCapture2::PGRERROR_OK)
+    	THROW_HW_ERROR(Error) << "Failed to get PACKET_SIZE property: " << m_error.GetDescription();
+
+    packet_size = property.value;
+    DEB_RETURN() << DEB_VAR1(packet_size);
+#endif
+}
+
+//---------------------------
+//
+//---------------------------
+void Camera::setPacketSize(int  packet_size)
+{
+    DEB_MEMBER_FUNCT();
+	DEB_PARAM() << DEB_VAR1(packet_size);
+#ifdef USE_GIGE
+    FlyCapture2::GigEProperty property;
+    property.propType = FlyCapture2::PACKET_SIZE;
+    property.value = packet_size;
+
+    m_error = m_camera->SetGigEProperty(&property);
+    if ( m_error != FlyCapture2::PGRERROR_OK)
+    	THROW_HW_ERROR(Error) << "Failed to set PACKET_SIZE property: " << m_error.GetDescription();
+#endif
+}
+
+//---------------------------
+//
+//---------------------------
+void Camera::getPacketDelay(int& packet_delay)
+{
+    DEB_MEMBER_FUNCT();
+#ifdef USE_GIGE
+    FlyCapture2::GigEProperty property;
+    property.propType = FlyCapture2::PACKET_DELAY;
+
+    m_error = m_camera->GetGigEProperty(&property);
+    if ( m_error != FlyCapture2::PGRERROR_OK)
+    	THROW_HW_ERROR(Error) << "Failed to get PACKET_DELAY property: " << m_error.GetDescription();
+
+    packet_delay = property.value;
+    DEB_RETURN() << DEB_VAR1(packet_delay);
+#endif
+}
+
+//---------------------------
+//
+//---------------------------
+void Camera::setPacketDelay(int  packet_delay)
+{
+    DEB_MEMBER_FUNCT();
+	DEB_PARAM() << DEB_VAR1(packet_delay);
+#ifdef USE_GIGE
+    FlyCapture2::GigEProperty property;
+    property.propType = FlyCapture2::PACKET_DELAY;
+    property.value = packet_delay;
+
+    m_error = m_camera->SetGigEProperty(&property);
+    if ( m_error != FlyCapture2::PGRERROR_OK)
+    	THROW_HW_ERROR(Error) << "Failed to set PACKET_DELAY property: " << m_error.GetDescription();
+#endif
 }
 
 //---------------------------

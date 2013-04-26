@@ -57,6 +57,12 @@ namespace PointGrey
     void setGain(double gain);
 
     // -- camera specific
+    void getPacketSize(int& packet_size /Out/);
+    void setPacketSize(int  packet_size);
+
+    void getPacketDelay(int& packet_delay /Out/);
+    void setPacketDelay(int  packet_delay);
+
     void getAutoExpTime(bool& auto_exp_time /Out/) const;
     void setAutoExpTime(bool auto_exp_time);
 

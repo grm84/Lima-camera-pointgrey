@@ -111,6 +111,12 @@ class Camera : public HwMaxImageSizeCallbackGen
     void setGain(double  gain);
 
     // camera specific
+    void getPacketSize(int& packet_size);
+    void setPacketSize(int  packet_size);
+
+    void getPacketDelay(int& packet_delay);
+    void setPacketDelay(int  packet_delay);
+
     void getAutoExpTime(bool& auto_frame_rate) const;
     void setAutoExpTime(bool  auto_exp_time);
 
