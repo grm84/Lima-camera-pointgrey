@@ -27,8 +27,17 @@
 #include "HwMaxImageSizeCallback.h"
 
 #include "FlyCapture2.h"
-
 using namespace std;
+
+#ifdef USE_GIGE
+typedef FlyCapture2::GigECamera Camera_t;
+typedef FlyCapture2::GigEImageSettings ImageSettings_t;
+typedef FlyCapture2::GigEImageSettingsInfo ImageSettingsInfo_t;
+#else
+typedef FlyCapture2::Camera Camera_t;
+typedef FlyCapture2::Format7ImageSettings ImageSettings_t;
+typedef FlyCapture2::Format7Info ImageSettingsInfo_t;
+#endif
 
 namespace lima
 {
@@ -131,12 +140,13 @@ class Camera : public HwMaxImageSizeCallbackGen
     volatile bool             m_acq_started;
     volatile bool             m_thread_running;
 
-    FlyCapture2::Camera      *m_camera;
+    Camera_t                 *m_camera;
     FlyCapture2::CameraInfo   m_camera_info;
     FlyCapture2::Error 		  m_error;
 
-    FlyCapture2::Format7Info  m_fmt7_info;
-    FlyCapture2::Format7ImageSettings m_fmt7_image_settings;
+    ImageSettingsInfo_t       m_image_settings_info;
+    ImageSettings_t           m_image_settings;
+
     FlyCapture2::Format7PacketInfo m_fmt7_packet_info;
 
     FlyCapture2::Property     m_frame_rate_property,

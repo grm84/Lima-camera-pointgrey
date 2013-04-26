@@ -75,8 +75,8 @@ Camera::Camera(const std::string& camera_ip, const int camera_serial_no)
     	THROW_HW_ERROR(Error) << "Failed to get camera info: "<<  m_error.GetDescription();
 
     bool fmt7_supported;
-    m_fmt7_info.mode = FlyCapture2::MODE_0;
-    m_error = m_camera->GetFormat7Info( &m_fmt7_info, &fmt7_supported );
+    m_image_settings_info.mode = FlyCapture2::MODE_0;
+    m_error = m_camera->GetFormat7Info( &m_image_settings_info, &fmt7_supported );
 
     if (m_error != FlyCapture2::PGRERROR_OK)
     	THROW_HW_ERROR(Error) << "Failed to get Format7 info: "<<  m_error.GetDescription();
@@ -85,16 +85,16 @@ Camera::Camera(const std::string& camera_ip, const int camera_serial_no)
     	THROW_HW_ERROR(Error) << "Format7 is not supported: ";
 
     // Set image format settings
-    m_fmt7_image_settings.mode = m_fmt7_info.mode;
-    m_fmt7_image_settings.offsetX = 0;
-    m_fmt7_image_settings.offsetY = 0;
-    m_fmt7_image_settings.width = m_fmt7_info.maxWidth;
-    m_fmt7_image_settings.height = m_fmt7_info.maxHeight;
-    m_fmt7_image_settings.pixelFormat = FlyCapture2::PIXEL_FORMAT_MONO8;
+    m_image_settings.mode = m_image_settings_info.mode;
+    m_image_settings.offsetX = 0;
+    m_image_settings.offsetY = 0;
+    m_image_settings.width = m_image_settings_info.maxWidth;
+    m_image_settings.height = m_image_settings_info.maxHeight;
+    m_image_settings.pixelFormat = FlyCapture2::PIXEL_FORMAT_MONO8;
 
     bool valid;
 
-    m_error = m_camera->ValidateFormat7Settings(&m_fmt7_image_settings,
+    m_error = m_camera->ValidateFormat7Settings(&m_image_settings,
 						&valid,
 						&m_fmt7_packet_info);
     if ( m_error != FlyCapture2::PGRERROR_OK)
@@ -102,7 +102,7 @@ Camera::Camera(const std::string& camera_ip, const int camera_serial_no)
     if ( !valid )
     	THROW_HW_ERROR(Error) << "Unsupported image format settings";
 
-    m_error = m_camera->SetFormat7Configuration(&m_fmt7_image_settings,
+    m_error = m_camera->SetFormat7Configuration(&m_image_settings,
 						m_fmt7_packet_info.recommendedBytesPerPacket);
 
     if ( m_error != FlyCapture2::PGRERROR_OK)
@@ -206,7 +206,7 @@ void Camera::stopAcq()
 void Camera::getDetectorImageSize(Size& size)
 {
     DEB_MEMBER_FUNCT();
-    size = Size(m_fmt7_info.maxWidth, m_fmt7_info.maxHeight);
+    size = Size(m_image_settings_info.maxWidth, m_image_settings_info.maxHeight);
     DEB_RETURN() << DEB_VAR1(size);
 }
 
@@ -505,7 +505,7 @@ void Camera::setBin(const Bin &aBin)
 void Camera::getVideoMode(VideoMode& mode) const
 {
     DEB_MEMBER_FUNCT();
-    switch(m_fmt7_image_settings.pixelFormat)
+    switch(m_image_settings.pixelFormat)
     {
     case FlyCapture2::PIXEL_FORMAT_MONO8:
     	mode = Y8;
@@ -527,7 +527,7 @@ void Camera::setVideoMode(VideoMode mode)
     DEB_MEMBER_FUNCT();
     DEB_PARAM() << DEB_VAR1(mode);
 
-    FlyCapture2::Format7ImageSettings fmt7_image_settings(m_fmt7_image_settings);
+    FlyCapture2::Format7ImageSettings image_settings(m_image_settings);
     FlyCapture2::Format7PacketInfo fmt7_packet_info;
     ImageType image_type;
     bool valid;
@@ -535,18 +535,18 @@ void Camera::setVideoMode(VideoMode mode)
     switch(mode)
     {
     case Y8:
-    	fmt7_image_settings.pixelFormat = FlyCapture2::PIXEL_FORMAT_MONO8;
+    	image_settings.pixelFormat = FlyCapture2::PIXEL_FORMAT_MONO8;
     	image_type = Bpp8;
     	break;
     case Y16:
-    	fmt7_image_settings.pixelFormat = FlyCapture2::PIXEL_FORMAT_MONO16;
+    	image_settings.pixelFormat = FlyCapture2::PIXEL_FORMAT_MONO16;
     	image_type = Bpp16;
     	break;
     default:
     	THROW_HW_ERROR(Error) << "Unsupported video mode";
     }
 
-    if (fmt7_image_settings.pixelFormat == m_fmt7_image_settings.pixelFormat)
+    if (image_settings.pixelFormat == m_image_settings.pixelFormat)
     	// no changes
     	return;
 
@@ -557,7 +557,7 @@ void Camera::setVideoMode(VideoMode mode)
     if (pause_acq)
     	stopAcq();
 
-    m_error = m_camera->ValidateFormat7Settings(&fmt7_image_settings,
+    m_error = m_camera->ValidateFormat7Settings(&image_settings,
 						&valid,
 						&fmt7_packet_info);
 
@@ -567,7 +567,7 @@ void Camera::setVideoMode(VideoMode mode)
     if (!valid)
     	THROW_HW_ERROR(Error) << "Unsupported image format settings";
 
-    m_error = m_camera->SetFormat7Configuration(&fmt7_image_settings,
+    m_error = m_camera->SetFormat7Configuration(&image_settings,
 						fmt7_packet_info.recommendedBytesPerPacket);
 
     if (m_error != FlyCapture2::PGRERROR_OK)
@@ -576,9 +576,9 @@ void Camera::setVideoMode(VideoMode mode)
     if (pause_acq)
     	startAcq();
 
-    m_fmt7_image_settings = fmt7_image_settings;
+    m_image_settings = image_settings;
 
-    maxImageSizeChanged(Size(m_fmt7_info.maxWidth, m_fmt7_info.maxHeight), image_type);
+    maxImageSizeChanged(Size(m_image_settings_info.maxWidth, m_image_settings_info.maxHeight), image_type);
 }
 
 //-----------------------------------------------------
