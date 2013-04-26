@@ -60,7 +60,7 @@ class Camera : public HwMaxImageSizeCallbackGen
       Ready, Exposure, Readout, Latency, Fault
     };
 
-    Camera(const std::string& camera_ip, const int camera_serial_no = 0);
+    Camera(const int camera_serial);
     ~Camera();
 
     // hw interface

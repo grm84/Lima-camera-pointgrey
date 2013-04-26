@@ -23,7 +23,7 @@ private:
 //---------------------------
 //
 //---------------------------
-Camera::Camera(const std::string& camera_ip, const int camera_serial_no)
+Camera::Camera(const int camera_serial)
     : m_nb_frames(1)
     , m_status(Ready)
     , m_quit(false)
@@ -56,15 +56,9 @@ Camera::Camera(const std::string& camera_ip, const int camera_serial_no)
     if (nb_cameras < 1)
     	THROW_HW_ERROR(Error) << "No cameras found";
 
-    if (camera_serial_no)
-    {
-    	m_error = busmgr.GetCameraFromSerialNumber(camera_serial_no, &pgrguid);
-    	if (m_error != FlyCapture2::PGRERROR_OK)
-	    THROW_HW_ERROR(Error) << "Camera not found: " << m_error.GetDescription();
-    }
-    else
-        // TODO: lookup via ip address
-    	THROW_HW_ERROR(Error) << "Camera lookup via IP address has not been implemented";
+    m_error = busmgr.GetCameraFromSerialNumber(camera_serial, &pgrguid);
+    if (m_error != FlyCapture2::PGRERROR_OK)
+    	THROW_HW_ERROR(Error) << "Camera not found: " << m_error.GetDescription();
 
     m_error = m_camera->Connect(&pgrguid);
     if (m_error != FlyCapture2::PGRERROR_OK)

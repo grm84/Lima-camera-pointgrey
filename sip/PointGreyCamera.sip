@@ -13,7 +13,7 @@ namespace PointGrey
       Ready, Exposure, Readout, Latency,
     };
 
-    Camera(const std::string& camera_ip, const int camera_serial_no = 0);
+    Camera(const int camera_serial);
     ~Camera();
 
     void prepareAcq();
