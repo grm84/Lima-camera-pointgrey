@@ -98,7 +98,7 @@ Camera::Camera(const std::string& camera_ip, const int camera_serial_no)
 						&valid,
 						&m_fmt7_packet_info);
     if ( m_error != FlyCapture2::PGRERROR_OK)
-    	THROW_HW_ERROR(Error) << "Unable to validate image format settings:" << m_error.GetDescription();
+    	THROW_HW_ERROR(Error) << "Unable to validate image format settings: " << m_error.GetDescription();
     if ( !valid )
     	THROW_HW_ERROR(Error) << "Unsupported image format settings";
 
@@ -106,7 +106,7 @@ Camera::Camera(const std::string& camera_ip, const int camera_serial_no)
 						m_fmt7_packet_info.recommendedBytesPerPacket);
 
     if ( m_error != FlyCapture2::PGRERROR_OK)
-    	THROW_HW_ERROR(Error) << "Unable to apply image format settings:" << m_error.GetDescription();
+    	THROW_HW_ERROR(Error) << "Unable to apply image format settings: " << m_error.GetDescription();
 
     // Force the camera to PGR's Y16 endianness
     _forcePGRY16Mode();
@@ -162,6 +162,9 @@ Camera::~Camera()
     delete m_camera;
 }
 
+//---------------------------
+//
+//---------------------------
 void Camera::prepareAcq()
 {
     DEB_MEMBER_FUNCT();
@@ -180,7 +183,7 @@ void Camera::startAcq()
 
     m_error = m_camera->StartCapture();
     if (m_error != FlyCapture2::PGRERROR_OK)
-    	THROW_HW_ERROR(Error) << "Unable to start image capture" << m_error.GetDescription();
+    	THROW_HW_ERROR(Error) << "Unable to start image capture: " << m_error.GetDescription();
 
     // Start acquisition thread
     AutoMutex lock(m_cond.mutex());
@@ -240,7 +243,7 @@ void Camera::getTrigMode(TrigMode& mode)
     FlyCapture2::TriggerMode triggerMode;
     m_error = m_camera->GetTriggerMode( &triggerMode );
     if (m_error != FlyCapture2::PGRERROR_OK)
-    	THROW_HW_ERROR(Error) << "Unable to get trigger mode settings" << m_error.GetDescription();
+    	THROW_HW_ERROR(Error) << "Unable to get trigger mode settings: " << m_error.GetDescription();
 
     mode = triggerMode.onOff ? ExtTrigSingle : IntTrig;
 
@@ -259,7 +262,7 @@ void Camera::setTrigMode(TrigMode mode)
     FlyCapture2::TriggerModeInfo triggerModeInfo;
     m_error = m_camera->GetTriggerModeInfo( &triggerModeInfo );
     if (m_error != FlyCapture2::PGRERROR_OK)
-    	THROW_HW_ERROR(Error) << "Unable to get trigger mode info from camera" << m_error.GetDescription();
+    	THROW_HW_ERROR(Error) << "Unable to get trigger mode info from camera: " << m_error.GetDescription();
 
     if ( not triggerModeInfo.present)
     {
@@ -271,7 +274,7 @@ void Camera::setTrigMode(TrigMode mode)
     FlyCapture2::TriggerMode triggerMode;
     m_error = m_camera->GetTriggerMode( &triggerMode );
     if (m_error != FlyCapture2::PGRERROR_OK)
-    	THROW_HW_ERROR(Error) << "Unable to get trigger mode settings" << m_error.GetDescription();
+    	THROW_HW_ERROR(Error) << "Unable to get trigger mode settings: " << m_error.GetDescription();
 
     switch(mode)
     {
@@ -289,7 +292,7 @@ void Camera::setTrigMode(TrigMode mode)
 
     m_error = m_camera->SetTriggerMode( &triggerMode );
     if (m_error != FlyCapture2::PGRERROR_OK)
-    	THROW_HW_ERROR(Error) << "Unable to set trigger mode settings" << m_error.GetDescription();
+    	THROW_HW_ERROR(Error) << "Unable to set trigger mode settings: " << m_error.GetDescription();
 }
 
 //-----------------------------------------------------
@@ -559,7 +562,7 @@ void Camera::setVideoMode(VideoMode mode)
 						&fmt7_packet_info);
 
     if (m_error != FlyCapture2::PGRERROR_OK)
-    	THROW_HW_ERROR(Error) << "Unable to validate image format settings:" << m_error.GetDescription();
+    	THROW_HW_ERROR(Error) << "Unable to validate image format settings: " << m_error.GetDescription();
 
     if (!valid)
     	THROW_HW_ERROR(Error) << "Unsupported image format settings";
@@ -568,7 +571,7 @@ void Camera::setVideoMode(VideoMode mode)
 						fmt7_packet_info.recommendedBytesPerPacket);
 
     if (m_error != FlyCapture2::PGRERROR_OK)
-    	THROW_HW_ERROR(Error) << "Unable to apply image format settings:" << m_error.GetDescription();
+    	THROW_HW_ERROR(Error) << "Unable to apply image format settings: " << m_error.GetDescription();
 
     if (pause_acq)
     	startAcq();
