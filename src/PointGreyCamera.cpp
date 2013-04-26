@@ -649,6 +649,9 @@ void Camera::setVideoMode(VideoMode mode)
     	// nothing to do
     	return;
 
+    if (m_acq_started)
+    	THROW_HW_ERROR(Error) << "Acquisition in progress";
+
     m_image_settings.pixelFormat = new_format;
     try
     {
