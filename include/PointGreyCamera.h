@@ -149,8 +149,6 @@ class Camera : public HwMaxImageSizeCallbackGen
     ImageSettingsInfo_t       m_image_settings_info;
     ImageSettings_t           m_image_settings;
 
-    FlyCapture2::Format7PacketInfo m_fmt7_packet_info;
-
     FlyCapture2::Property     m_frame_rate_property,
                               m_exp_time_property,
                               m_gain_property;

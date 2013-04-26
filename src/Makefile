@@ -4,7 +4,7 @@ SRCS = $(pointgrey-objs:.o=.cpp)
 
 CXXFLAGS += -I../include -I../../../hardware/include -I../../../common/include \
 			-I/usr/include/flycapture \
-			-fPIC -g
+			-fPIC -g -DUSE_GIGE
 
 all:	PointGrey.o
 

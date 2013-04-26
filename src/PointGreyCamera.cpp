@@ -47,7 +47,7 @@ Camera::Camera(const std::string& camera_ip, const int camera_serial_no)
     FlyCapture2::PGRGuid pgrguid;
 
     unsigned int nb_cameras;
-    m_camera = new FlyCapture2::Camera();
+    m_camera = new Camera_t();
 
     m_error = busmgr.GetNumOfCameras(&nb_cameras);
     if (m_error != FlyCapture2::PGRERROR_OK)
@@ -142,16 +142,17 @@ Camera::~Camera()
 void Camera::_getImageSettingsInfo()
 {
     DEB_MEMBER_FUNCT();
-
+#ifdef USE_GIGE
+    m_error = m_camera->GetGigEImageSettingsInfo(&m_image_settings_info);
+#else
     bool fmt7_supported;
     m_image_settings_info.mode = FlyCapture2::MODE_0;
-    m_error = m_camera->GetFormat7Info( &m_image_settings_info, &fmt7_supported);
-
-    if (m_error != FlyCapture2::PGRERROR_OK)
-    	THROW_HW_ERROR(Error) << "Failed to get Format7 info: "<<  m_error.GetDescription();
-
+    m_error = m_camera->GetFormat7Info(&m_image_settings_info, &fmt7_supported);
     if (!fmt7_supported)
     	THROW_HW_ERROR(Error) << "Format7 is not supported";
+#endif
+    if (m_error != FlyCapture2::PGRERROR_OK)
+    	THROW_HW_ERROR(Error) << "Failed to get Format7 info: "<<  m_error.GetDescription();
 }
 
 //---------------------------
@@ -160,19 +161,21 @@ void Camera::_getImageSettingsInfo()
 void Camera::_applyImageSettings()
 {
     DEB_MEMBER_FUNCT();
-
+#ifdef USE_GIGE
+    m_error = m_camera->SetGigEImageSettings(&m_image_settings);
+#else
     bool valid;
-    m_error = m_camera->ValidateFormat7Settings(&m_image_settings,
-						&valid,
-						&m_fmt7_packet_info);
+    FlyCapture2::Format7PacketInfo packet_info;
+    m_error = m_camera->ValidateFormat7Settings(&m_image_settings, &valid, &packet_info);
+
     if ( m_error != FlyCapture2::PGRERROR_OK)
     	THROW_HW_ERROR(Error) << "Unable to validate image format settings: " << m_error.GetDescription();
     if ( !valid )
     	THROW_HW_ERROR(Error) << "Unsupported image format settings";
 
     m_error = m_camera->SetFormat7Configuration(&m_image_settings,
-						m_fmt7_packet_info.recommendedBytesPerPacket);
-
+    		packet_info.recommendedBytesPerPacket);
+#endif
     if ( m_error != FlyCapture2::PGRERROR_OK)
     	THROW_HW_ERROR(Error) << "Unable to apply image format settings: " << m_error.GetDescription();
 
