@@ -120,6 +120,8 @@ class Camera : public HwMaxImageSizeCallbackGen
     void _getProperty(FlyCapture2::Property *property);
     void _setProperty(FlyCapture2::Property *property);
 
+    void _getImageSettingsInfo();
+    void _applyImageSettings();
  private:
     class _AcqThread;
     friend class _AcqThread;
