@@ -20,148 +20,138 @@
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //###########################################################################
 
-#include "PointGreyInterface.h"
-#include "PointGreyCamera.h"
 #include "PointGreyDetInfoCtrlObj.h"
-#include "PointGreySyncCtrlObj.h"
-#include "PointGreyVideoCtrlObj.h"
+#include "PointGreyCamera.h"
 
 using namespace lima;
 using namespace lima::PointGrey;
-using namespace std;
-
 
 /*******************************************************************
- * \brief Hw Interface constructor
+ * \brief DetInfoCtrlObj constructor
  *******************************************************************/
-
-Interface::Interface(Camera& cam)
+DetInfoCtrlObj::DetInfoCtrlObj(Camera& cam)
 	: m_cam(cam)
 {
 	DEB_CONSTRUCTOR();
-	m_det_info = new DetInfoCtrlObj(cam);
-	m_sync = new SyncCtrlObj(cam);
-	m_video = new VideoCtrlObj(cam);
-
-	m_cap_list.push_back(HwCap(m_det_info));
-	m_cap_list.push_back(HwCap(m_sync));
-	m_cap_list.push_back(HwCap(m_video));
-
-	HwBufferCtrlObj *buffer = &(m_video->getHwBufferCtrlObj());
-	m_cap_list.push_back(HwCap(buffer));
 }
 
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-Interface::~Interface()
-{
-	DEB_DESTRUCTOR();
-	delete m_det_info;
-	delete m_sync;
-	delete m_video;
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Interface::getCapList(HwInterface::CapList &cap_list) const
+void DetInfoCtrlObj::getMaxImageSize(Size& size)
 {
 	DEB_MEMBER_FUNCT();
-	cap_list = m_cap_list;
+	m_cam.getDetectorImageSize(size);
 }
 
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Interface::reset(ResetLevel reset_level)
+void DetInfoCtrlObj::getDetectorImageSize(Size& size)
 {
 	DEB_MEMBER_FUNCT();
-	DEB_PARAM() << DEB_VAR1(reset_level);
-	stopAcq();
-	m_cam._setStatus(Camera::Ready,true);
+	m_cam.getDetectorImageSize(size);
 }
 
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Interface::prepareAcq()
+void DetInfoCtrlObj::getDefImageType(ImageType& image_type)
 {
 	DEB_MEMBER_FUNCT();
-	m_cam.prepareAcq();
+	image_type = Bpp16;
 }
 
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Interface::startAcq()
+void DetInfoCtrlObj::getCurrImageType(ImageType& image_type)
 {
 	DEB_MEMBER_FUNCT();
-	m_cam.startAcq();
-}
 
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Interface::stopAcq()
-{
-	DEB_MEMBER_FUNCT();
-	m_cam.stopAcq();
-}
+	VideoMode video_mode;
+	m_cam.getVideoMode(video_mode);
 
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Interface::getStatus(StatusType& status)
-{
-	DEB_MEMBER_FUNCT();
-	Camera::Status pg_status = Camera::Ready;
-	m_cam.getStatus(pg_status);
-	switch (pg_status)
+	switch (video_mode)
 	{
-	case Camera::Ready:
-		status.det = DetIdle;
-		status.acq = AcqReady;
+	case Y8:
+		image_type = Bpp8;
 		break;
-	case Camera::Exposure:
-		status.det = DetExposure;
-		status.acq = AcqRunning;
+	case Y16:
+		image_type = Bpp16;
 		break;
-	case Camera::Readout:
-		status.det = DetReadout;
-		status.acq = AcqRunning;
-		break;
-	case Camera::Latency:
-		status.det = DetLatency;
-		status.acq = AcqRunning;
-		break;
-	case Camera::Fault:
-		status.det = DetFault;
-		status.acq = AcqFault;
+	default:
+		// TODO: handle error
+		return;
 	}
-	status.det_mask = DetExposure | DetReadout | DetLatency;
-	DEB_RETURN() << DEB_VAR1(status);
+	DEB_RETURN() << DEB_VAR1(image_type);
 }
 
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-int Interface::getNbHwAcquiredFrames()
+void DetInfoCtrlObj::setCurrImageType(ImageType image_type)
 {
 	DEB_MEMBER_FUNCT();
-	int acq_frames;
-	m_cam.getNbHwAcquiredFrames(acq_frames);
-	return acq_frames;
+	DEB_PARAM() << DEB_VAR1(image_type);
+
+	VideoMode video_mode;
+	switch (image_type)
+	{
+	case Bpp8:
+		video_mode = Y8;
+		break;
+	case Bpp16:
+		video_mode = Y16;
+		break;
+	default:
+		// TODO: handle error
+		return;
+	}
+	m_cam.setVideoMode(video_mode);
 }
 
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Interface::setAutoGain(bool auto_gain) { m_cam.setAutoGain(auto_gain); }
-void Interface::getAutoGain(bool& auto_gain) const { m_cam.getAutoGain(auto_gain); }
+void DetInfoCtrlObj::getPixelSize(double& x_size, double& y_size)
+{
+	DEB_MEMBER_FUNCT();
+	x_size = y_size = -1.; // TODO: don't know
+}
 
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Interface::setAutoExpTime(bool auto_exp_time) { m_cam.setAutoExpTime(auto_exp_time); }
-void Interface::getAutoExpTime(bool& auto_exp_time) const { m_cam.getAutoExpTime(auto_exp_time); }
+void DetInfoCtrlObj::getDetectorType(std::string& type)
+{
+	DEB_MEMBER_FUNCT();
+	m_cam.getDetectorType(type);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void DetInfoCtrlObj::getDetectorModel(std::string& model)
+{
+	DEB_MEMBER_FUNCT();
+	m_cam.getDetectorModel(model);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void DetInfoCtrlObj::registerMaxImageSizeCallback(HwMaxImageSizeCallback& cb)
+{
+	DEB_MEMBER_FUNCT();
+	m_cam.registerMaxImageSizeCallback(cb);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void DetInfoCtrlObj::unregisterMaxImageSizeCallback(HwMaxImageSizeCallback& cb)
+{
+	DEB_MEMBER_FUNCT();
+	m_cam.unregisterMaxImageSizeCallback(cb);
+}

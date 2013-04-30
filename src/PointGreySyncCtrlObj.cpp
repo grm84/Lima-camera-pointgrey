@@ -20,148 +20,114 @@
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //###########################################################################
 
-#include "PointGreyInterface.h"
-#include "PointGreyCamera.h"
-#include "PointGreyDetInfoCtrlObj.h"
 #include "PointGreySyncCtrlObj.h"
-#include "PointGreyVideoCtrlObj.h"
+#include "PointGreyCamera.h"
 
 using namespace lima;
 using namespace lima::PointGrey;
-using namespace std;
 
 
 /*******************************************************************
- * \brief Hw Interface constructor
+ * \brief SyncCtrlObj constructor
  *******************************************************************/
-
-Interface::Interface(Camera& cam)
+SyncCtrlObj::SyncCtrlObj(Camera& cam)
 	: m_cam(cam)
 {
 	DEB_CONSTRUCTOR();
-	m_det_info = new DetInfoCtrlObj(cam);
-	m_sync = new SyncCtrlObj(cam);
-	m_video = new VideoCtrlObj(cam);
-
-	m_cap_list.push_back(HwCap(m_det_info));
-	m_cap_list.push_back(HwCap(m_sync));
-	m_cap_list.push_back(HwCap(m_video));
-
-	HwBufferCtrlObj *buffer = &(m_video->getHwBufferCtrlObj());
-	m_cap_list.push_back(HwCap(buffer));
 }
 
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-Interface::~Interface()
-{
-	DEB_DESTRUCTOR();
-	delete m_det_info;
-	delete m_sync;
-	delete m_video;
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Interface::getCapList(HwInterface::CapList &cap_list) const
+bool SyncCtrlObj::checkTrigMode(TrigMode trig_mode)
 {
 	DEB_MEMBER_FUNCT();
-	cap_list = m_cap_list;
+	return true;
 }
 
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Interface::reset(ResetLevel reset_level)
+void SyncCtrlObj::setTrigMode(TrigMode trig_mode)
 {
 	DEB_MEMBER_FUNCT();
-	DEB_PARAM() << DEB_VAR1(reset_level);
-	stopAcq();
-	m_cam._setStatus(Camera::Ready,true);
+	if (!checkTrigMode(trig_mode))
+		THROW_HW_ERROR(InvalidValue) << "Invalid " << DEB_VAR1(trig_mode);
+	m_cam.setTrigMode(trig_mode);
 }
 
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Interface::prepareAcq()
+void SyncCtrlObj::getTrigMode(TrigMode& trig_mode)
+{
+	m_cam.getTrigMode(trig_mode);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void SyncCtrlObj::setExpTime(double exp_time)
+{
+	m_cam.setExpTime(exp_time);
+	ValidRangesType valid_ranges;
+	getValidRanges(valid_ranges);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void SyncCtrlObj::getExpTime(double& exp_time)
+{
+	m_cam.getExpTime(exp_time);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void SyncCtrlObj::setLatTime(double lat_time)
+{
+	m_cam.setLatTime(lat_time);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void SyncCtrlObj::getLatTime(double& lat_time)
+{
+	m_cam.getLatTime(lat_time);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void SyncCtrlObj::setNbHwFrames(int nb_frames)
+{
+	m_cam.setNbFrames(nb_frames);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void SyncCtrlObj::getNbHwFrames(int& nb_frames)
+{
+	m_cam.getNbFrames(nb_frames);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void SyncCtrlObj::getValidRanges(ValidRangesType& valid_ranges)
 {
 	DEB_MEMBER_FUNCT();
-	m_cam.prepareAcq();
+	double min_time;
+	double max_time;
+
+	m_cam.getExpTimeRange(min_time, max_time);
+	valid_ranges.min_exp_time = min_time;
+	valid_ranges.max_exp_time = max_time;
+
+	m_cam.getLatTimeRange(min_time, max_time);
+	valid_ranges.min_lat_time = min_time;
+	valid_ranges.max_lat_time = max_time;
 }
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Interface::startAcq()
-{
-	DEB_MEMBER_FUNCT();
-	m_cam.startAcq();
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Interface::stopAcq()
-{
-	DEB_MEMBER_FUNCT();
-	m_cam.stopAcq();
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Interface::getStatus(StatusType& status)
-{
-	DEB_MEMBER_FUNCT();
-	Camera::Status pg_status = Camera::Ready;
-	m_cam.getStatus(pg_status);
-	switch (pg_status)
-	{
-	case Camera::Ready:
-		status.det = DetIdle;
-		status.acq = AcqReady;
-		break;
-	case Camera::Exposure:
-		status.det = DetExposure;
-		status.acq = AcqRunning;
-		break;
-	case Camera::Readout:
-		status.det = DetReadout;
-		status.acq = AcqRunning;
-		break;
-	case Camera::Latency:
-		status.det = DetLatency;
-		status.acq = AcqRunning;
-		break;
-	case Camera::Fault:
-		status.det = DetFault;
-		status.acq = AcqFault;
-	}
-	status.det_mask = DetExposure | DetReadout | DetLatency;
-	DEB_RETURN() << DEB_VAR1(status);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-int Interface::getNbHwAcquiredFrames()
-{
-	DEB_MEMBER_FUNCT();
-	int acq_frames;
-	m_cam.getNbHwAcquiredFrames(acq_frames);
-	return acq_frames;
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Interface::setAutoGain(bool auto_gain) { m_cam.setAutoGain(auto_gain); }
-void Interface::getAutoGain(bool& auto_gain) const { m_cam.getAutoGain(auto_gain); }
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Interface::setAutoExpTime(bool auto_exp_time) { m_cam.setAutoExpTime(auto_exp_time); }
-void Interface::getAutoExpTime(bool& auto_exp_time) const { m_cam.getAutoExpTime(auto_exp_time); }

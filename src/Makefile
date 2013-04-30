@@ -1,4 +1,8 @@
-pointgrey-objs = PointGreyCamera.o PointGreyInterface.o
+pointgrey-objs = PointGreyCamera.o \
+	PointGreyInterface.o \
+	PointGreyDetInfoCtrlObj.o \
+	PointGreySyncCtrlObj.o \
+	PointGreyVideoCtrlObj.o 
 
 SRCS = $(pointgrey-objs:.o=.cpp) 
 

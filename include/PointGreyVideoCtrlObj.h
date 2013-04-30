@@ -19,10 +19,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //###########################################################################
-#ifndef POINTGREYINTERFACE_H
-#define POINTGREYINTERFACE_H
+#ifndef POINTGREYVIDEOCTRLOBJ_H
+#define POINTGREYVIDEOCTRLOBJ_H
 
-#include "HwInterface.h"
+#include "HwVideoCtrlObj.h"
 
 namespace lima
 {
@@ -30,48 +30,40 @@ namespace PointGrey
 {
 
 class Camera;
-class DetInfoCtrlObj;
-class SyncCtrlObj;
-class VideoCtrlObj;
 
 /*******************************************************************
- * \class Interface
- * \brief PointGrey hardware interface
+ * \class VideoCtrlObj
+ * \brief Control object providing PointGrey Video interface
  *******************************************************************/
-
-class Interface : public HwInterface
+class VideoCtrlObj : public HwVideoCtrlObj
 {
-	DEB_CLASS_NAMESPC(DebModCamera, "PointGreyInterface", "PointGrey");
-
+	DEB_CLASS_NAMESPC(DebModCamera, "VideoCtrlObj", "PointGrey");
 public:
-	Interface(Camera& cam);
-	virtual ~Interface();
+	VideoCtrlObj(Camera& cam);
+	virtual ~VideoCtrlObj() {};
 
-	//- From HwInterface
-	virtual void getCapList(CapList&) const;
-	virtual void reset(ResetLevel reset_level);
-	virtual void prepareAcq();
-	virtual void startAcq();
-	virtual void stopAcq();
-	virtual void getStatus(StatusType& status);
-	virtual int getNbHwAcquiredFrames();
+	virtual void getSupportedVideoMode(std::list<VideoMode> &aList) const;
+	virtual void getVideoMode(VideoMode&) const;
+	virtual void setVideoMode(VideoMode);
 
-	//- PointGrey Specific
-	void getAutoExpTime(bool &auto_frame_rate) const;
-	void setAutoExpTime(bool auto_exp_time);
+	virtual void getLive(bool&) const;
+	virtual void setLive(bool);
 
-	void getAutoGain(bool& auto_gain) const;
-	void setAutoGain(bool auto_gain);
+	virtual void getGain(double&) const;
+	virtual void setGain(double);
+
+	virtual void checkBin(Bin& bin){};
+	virtual void setBin(const Bin&){};
+
+	virtual void checkRoi(const Roi& set_roi, Roi& hw_roi){};
+	virtual void setRoi(const Roi&){};
 
 private:
-	Camera&         m_cam;
-	CapList         m_cap_list;
-	DetInfoCtrlObj *m_det_info;
-	SyncCtrlObj    *m_sync;
-	VideoCtrlObj   *m_video;
+	Camera& m_cam;
+	bool m_live;
 };
 
 } // namespace PointGrey
 } // namespace lima
 
-#endif // POINTGREYINTERFACE_H
+#endif // POINTGREYVIDEOCTRLOBJ_H
