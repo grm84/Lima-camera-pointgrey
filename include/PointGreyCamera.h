@@ -24,6 +24,7 @@
 
 #include <stdlib.h>
 #include <limits>
+#include "HwBufferMgr.h"
 #include "HwMaxImageSizeCallback.h"
 
 #include "FlyCapture2.h"
@@ -72,10 +73,16 @@ public:
 
 	void getStatus(Camera::Status& status);
 
+	// buffer control object
+	HwBufferCtrlObj* getBufferCtrlObj();
+
 	// detector info object
 	void getDetectorType(std::string& type);
 	void getDetectorModel(std::string& model);
 	void getDetectorImageSize(Size& size);
+
+	void getImageType(ImageType& type);
+	void setImageType(ImageType type);
 
 	// synch control object
 	void getTrigMode(TrigMode& mode);
@@ -103,14 +110,10 @@ public:
 	void getBin(Bin& bin);
 	void setBin(const Bin& bin);
 
-	// video control object
-	void getVideoMode(VideoMode& mode) const;
-	void setVideoMode(VideoMode  mode);
-
+	// camera specific
 	void getGain(double& gain);
 	void setGain(double  gain);
 
-	// camera specific
 	void getPacketSize(int& packet_size);
 	void setPacketSize(int  packet_size);
 
@@ -138,7 +141,7 @@ private:
 	void _stopAcq(bool internalFlag);
 	void _forcePGRY16Mode();
 
-	VideoCtrlObj             *m_video;
+	SoftBufferCtrlObj         m_buffer_ctrl_obj;
 
 	Camera::Status            m_status;
 	int                       m_nb_frames;

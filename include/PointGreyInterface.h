@@ -62,13 +62,11 @@ public:
 
 	void getAutoGain(bool& auto_gain) const;
 	void setAutoGain(bool auto_gain);
-
 private:
 	Camera&         m_cam;
 	CapList         m_cap_list;
 	DetInfoCtrlObj *m_det_info;
 	SyncCtrlObj    *m_sync;
-	VideoCtrlObj   *m_video;
 };
 
 } // namespace PointGrey

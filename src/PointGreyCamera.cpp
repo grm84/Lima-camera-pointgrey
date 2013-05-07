@@ -1,6 +1,5 @@
 #include "PointGreyCamera.h"
 #include "PointGreyInterface.h"
-#include "PointGreyVideoCtrlObj.h"
 
 using namespace lima;
 using namespace lima::PointGrey;
@@ -33,7 +32,6 @@ Camera::Camera(const int camera_serial,
 	, m_acq_started(false)
 	, m_thread_running(true)
 	, m_image_number(0)
-	, m_video(NULL)
 	, m_camera(NULL)
 	// camera properties
 	, m_frame_rate_property(FlyCapture2::FRAME_RATE)
@@ -278,7 +276,9 @@ void Camera::startAcq()
 	DEB_MEMBER_FUNCT();
 
 	DEB_TRACE() << "Start acquisition";
-	m_video->getBuffer().setStartTimestamp(Timestamp::now());
+
+	StdBufferCbMgr& buffer_mgr = m_buffer_ctrl_obj.getBuffer();
+	buffer_mgr.setStartTimestamp(Timestamp::now());
 
 	m_error = m_camera->StartCapture();
 	if (m_error != FlyCapture2::PGRERROR_OK)
@@ -327,6 +327,72 @@ void Camera::getDetectorModel(string& model)
 	DEB_MEMBER_FUNCT();
 	model = m_camera_info.modelName;
 	DEB_RETURN() << DEB_VAR1(model);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getImageType(ImageType& type)
+{
+    DEB_MEMBER_FUNCT();
+    switch(m_image_settings.pixelFormat)
+    {
+    case FlyCapture2::PIXEL_FORMAT_MONO8:
+	type = Bpp8;
+	break;
+    case FlyCapture2::PIXEL_FORMAT_MONO16:
+	type = Bpp16;
+	break;
+    default:
+	THROW_HW_ERROR(Error) << "Unable to determine the image type";
+    }
+    DEB_RETURN() << DEB_VAR1(type);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::setImageType(ImageType type)
+{
+	DEB_MEMBER_FUNCT();
+	DEB_PARAM() << DEB_VAR1(type);
+
+	FlyCapture2::PixelFormat old_format, new_format;
+	bool valid;
+
+	old_format = m_image_settings.pixelFormat;
+
+    switch(type)
+    {
+    case Bpp8:
+		new_format = FlyCapture2::PIXEL_FORMAT_MONO8;
+		break;
+	case Bpp16:
+		new_format = FlyCapture2::PIXEL_FORMAT_MONO16;
+		break;
+	default:
+		THROW_HW_ERROR(Error) << "Unsupported image type";
+	}
+
+	if (new_format == old_format)
+		// nothing to do
+		return;
+
+	if (m_acq_started)
+		THROW_HW_ERROR(Error) << "Acquisition in progress";
+
+	m_image_settings.pixelFormat = new_format;
+	try
+	{
+		_applyImageSettings();
+	}
+	catch (Exception &e)
+	{
+		m_image_settings.pixelFormat = old_format;
+		THROW_HW_ERROR(Error) << e.getErrDesc();
+	}
+
+	maxImageSizeChanged(Size(m_image_settings_info.maxWidth, m_image_settings_info.maxHeight), type);
 }
 
 //-----------------------------------------------------
@@ -546,6 +612,14 @@ void Camera::getStatus(Camera::Status& status)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
+HwBufferCtrlObj* Camera::getBufferCtrlObj()
+{
+    return &m_buffer_ctrl_obj;
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
 void Camera::checkRoi(const Roi& set_roi, Roi& hw_roi)
 {
 	DEB_MEMBER_FUNCT();
@@ -596,75 +670,6 @@ void Camera::setBin(const Bin &aBin)
 {
 	DEB_MEMBER_FUNCT();
 	DEB_RETURN() << DEB_VAR1(aBin);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Camera::getVideoMode(VideoMode& mode) const
-{
-	DEB_MEMBER_FUNCT();
-	switch(m_image_settings.pixelFormat)
-	{
-	case FlyCapture2::PIXEL_FORMAT_MONO8:
-		mode = Y8;
-		break;
-	case FlyCapture2::PIXEL_FORMAT_MONO16:
-		mode = Y16;
-		break;
-	default:
-		THROW_HW_ERROR(Error) << "Unable to determine the video mode";
-	}
-	DEB_RETURN() << DEB_VAR1(mode);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Camera::setVideoMode(VideoMode mode)
-{
-	DEB_MEMBER_FUNCT();
-	DEB_PARAM() << DEB_VAR1(mode);
-
-	FlyCapture2::PixelFormat old_format, new_format;
-	ImageType image_type;
-	bool valid;
-
-	old_format = m_image_settings.pixelFormat;
-
-	switch(mode)
-	{
-	case Y8:
-		new_format = FlyCapture2::PIXEL_FORMAT_MONO8;
-		image_type = Bpp8;
-		break;
-	case Y16:
-		new_format = FlyCapture2::PIXEL_FORMAT_MONO16;
-		image_type = Bpp16;
-		break;
-	default:
-		THROW_HW_ERROR(Error) << "Unsupported video mode";
-	}
-
-	if (new_format == old_format)
-		// nothing to do
-		return;
-
-	if (m_acq_started)
-		THROW_HW_ERROR(Error) << "Acquisition in progress";
-
-	m_image_settings.pixelFormat = new_format;
-	try
-	{
-		_applyImageSettings();
-	}
-	catch (Exception &e)
-	{
-		m_image_settings.pixelFormat = old_format;
-		THROW_HW_ERROR(Error) << e.getErrDesc();
-	}
-
-	maxImageSizeChanged(Size(m_image_settings_info.maxWidth, m_image_settings_info.maxHeight), image_type);
 }
 
 //-----------------------------------------------------
@@ -841,7 +846,6 @@ void Camera::_AcqThread::threadFunction()
 	DEB_MEMBER_FUNCT();
 	FlyCapture2::Error error;
 	FlyCapture2::Image image;
-	VideoMode mode;
 
 	sched_param param;
 	param.sched_priority = sched_get_priority_max(SCHED_FIFO);
@@ -851,6 +855,7 @@ void Camera::_AcqThread::threadFunction()
 	}
 
 	AutoMutex lock(m_cam.m_cond.mutex());
+	StdBufferCbMgr& buffer_mgr = m_cam.m_buffer_ctrl_obj.getBuffer();
 
 	while(true)
 	{
@@ -885,10 +890,13 @@ void Camera::_AcqThread::threadFunction()
 				m_cam._setStatus(Camera::Readout, false);
 
 				DEB_TRACE() << "image# " << m_cam.m_image_number << " acquired";
+				void* framePt = buffer_mgr.getFrameBufferPtr(m_cam.m_image_number);
+				const FrameDim& fDim = buffer_mgr.getFrameDim();
+				memcpy(framePt, image.GetData(), fDim.getMemSize());
 
-				m_cam.m_video->getVideoMode(mode);
-
-				continue_acq = m_cam.m_video->callNewImage((char *)image.GetData(), image.GetCols(), image.GetRows(), mode);
+				HwFrameInfoType frame_info;
+				frame_info.acq_frame_nb = m_cam.m_image_number;
+				continue_acq = buffer_mgr.newFrameReady(frame_info);
 				m_cam.m_image_number++;
 			}
 			else if (error == FlyCapture2::PGRERROR_IMAGE_CONSISTENCY_ERROR)

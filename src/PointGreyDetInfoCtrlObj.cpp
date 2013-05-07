@@ -59,7 +59,7 @@ void DetInfoCtrlObj::getDetectorImageSize(Size& size)
 void DetInfoCtrlObj::getDefImageType(ImageType& image_type)
 {
 	DEB_MEMBER_FUNCT();
-	image_type = Bpp16;
+	m_cam.getImageType(image_type);
 }
 
 //-----------------------------------------------------
@@ -68,22 +68,7 @@ void DetInfoCtrlObj::getDefImageType(ImageType& image_type)
 void DetInfoCtrlObj::getCurrImageType(ImageType& image_type)
 {
 	DEB_MEMBER_FUNCT();
-
-	VideoMode video_mode;
-	m_cam.getVideoMode(video_mode);
-
-	switch (video_mode)
-	{
-	case Y8:
-		image_type = Bpp8;
-		break;
-	case Y16:
-		image_type = Bpp16;
-		break;
-	default:
-		// TODO: handle error
-		return;
-	}
+	m_cam.getImageType(image_type);
 	DEB_RETURN() << DEB_VAR1(image_type);
 }
 
@@ -94,21 +79,7 @@ void DetInfoCtrlObj::setCurrImageType(ImageType image_type)
 {
 	DEB_MEMBER_FUNCT();
 	DEB_PARAM() << DEB_VAR1(image_type);
-
-	VideoMode video_mode;
-	switch (image_type)
-	{
-	case Bpp8:
-		video_mode = Y8;
-		break;
-	case Bpp16:
-		video_mode = Y16;
-		break;
-	default:
-		// TODO: handle error
-		return;
-	}
-	m_cam.setVideoMode(video_mode);
+	m_cam.setImageType(image_type);
 }
 
 //-----------------------------------------------------

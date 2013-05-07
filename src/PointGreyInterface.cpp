@@ -24,7 +24,6 @@
 #include "PointGreyCamera.h"
 #include "PointGreyDetInfoCtrlObj.h"
 #include "PointGreySyncCtrlObj.h"
-#include "PointGreyVideoCtrlObj.h"
 
 using namespace lima;
 using namespace lima::PointGrey;
@@ -41,13 +40,11 @@ Interface::Interface(Camera& cam)
 	DEB_CONSTRUCTOR();
 	m_det_info = new DetInfoCtrlObj(cam);
 	m_sync = new SyncCtrlObj(cam);
-	m_video = new VideoCtrlObj(cam);
 
 	m_cap_list.push_back(HwCap(m_det_info));
 	m_cap_list.push_back(HwCap(m_sync));
-	m_cap_list.push_back(HwCap(m_video));
 
-	HwBufferCtrlObj *buffer = &(m_video->getHwBufferCtrlObj());
+	HwBufferCtrlObj *buffer = cam.getBufferCtrlObj();
 	m_cap_list.push_back(HwCap(buffer));
 }
 
@@ -59,7 +56,6 @@ Interface::~Interface()
 	DEB_DESTRUCTOR();
 	delete m_det_info;
 	delete m_sync;
-	delete m_video;
 }
 
 //-----------------------------------------------------
