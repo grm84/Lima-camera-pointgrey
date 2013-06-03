@@ -149,15 +149,3 @@ int Interface::getNbHwAcquiredFrames()
 	m_cam.getNbHwAcquiredFrames(acq_frames);
 	return acq_frames;
 }
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Interface::setAutoGain(bool auto_gain) { m_cam.setAutoGain(auto_gain); }
-void Interface::getAutoGain(bool& auto_gain) const { m_cam.getAutoGain(auto_gain); }
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Interface::setAutoExpTime(bool auto_exp_time) { m_cam.setAutoExpTime(auto_exp_time); }
-void Interface::getAutoExpTime(bool& auto_exp_time) const { m_cam.getAutoExpTime(auto_exp_time); }

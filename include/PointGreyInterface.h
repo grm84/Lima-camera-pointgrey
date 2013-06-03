@@ -56,12 +56,8 @@ public:
 	virtual void getStatus(StatusType& status);
 	virtual int getNbHwAcquiredFrames();
 
-	//- PointGrey Specific
-	void getAutoExpTime(bool &auto_frame_rate) const;
-	void setAutoExpTime(bool auto_exp_time);
+	Camera& getCamera(){ return m_cam; }
 
-	void getAutoGain(bool& auto_gain) const;
-	void setAutoGain(bool auto_gain);
 private:
 	Camera&         m_cam;
 	CapList         m_cap_list;
