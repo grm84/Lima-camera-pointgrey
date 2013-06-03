@@ -33,7 +33,7 @@ namespace PointGrey
 
     void getExpTime(double& exp_time /Out/);	
     void setExpTime(double  exp_time);
-    void getExpTimeRange(double& min_exp_time /Out/, double& max_exp_time /Out/) const;
+    void getExpTimeRange(double& min_exp_time /Out/, double& max_exp_time /Out/);
 
     void getLatTime(double& lat_time /Out/);
     void setLatTime(double  lat_time);
@@ -52,21 +52,31 @@ namespace PointGrey
     void getBin(Bin& /Out/);
     void setBin(const Bin&);
 
-    // -- video
-    void getGain(double& gain /Out/);
-    void setGain(double gain);
-
     // -- camera specific
+    // packet size control
     void getPacketSize(int& packet_size /Out/);
     void setPacketSize(int  packet_size);
 
+    // packet delay control
     void getPacketDelay(int& packet_delay /Out/);
     void setPacketDelay(int  packet_delay);
 
-    void getAutoExpTime(bool& auto_exp_time /Out/) const;
+    // exposure control
+    void getAutoExpTime(bool& auto_exp_time /Out/);
     void setAutoExpTime(bool auto_exp_time);
 
-    void getAutoGain(bool& auto_gain /Out/) const;
-    void setAutoGain(bool auto_gain);    
+    // gain control
+    void getGain(double& gain /Out/);
+    void setGain(double gain);
+    void getAutoGain(bool& auto_gain /Out/);
+    void setAutoGain(bool auto_gain);
+    void getGainRange(double& min_gain /Out/, double& max_gain /Out/);
+ 
+    // frame rate control
+    void getFrameRate(double& frame_rate /Out/);	
+    void setFrameRate(double  frame_rate);
+    void getAutoFrameRate(bool& auto_frame_rate /Out/);
+    void setAutoFrameRate(bool auto_frame_rate);
+    void getFrameRateRange(double& min_frame_rate /Out/, double& max_frame_rate /Out/);
   };
 };

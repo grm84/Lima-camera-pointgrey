@@ -69,9 +69,8 @@ void SyncCtrlObj::getTrigMode(TrigMode& trig_mode)
 //-----------------------------------------------------
 void SyncCtrlObj::setExpTime(double exp_time)
 {
-	m_cam.setExpTime(exp_time);
-	ValidRangesType valid_ranges;
-	getValidRanges(valid_ranges);
+	double exp_time_ms = 1E3 * exp_time;
+	m_cam.setExpTime(exp_time_ms);
 }
 
 //-----------------------------------------------------
@@ -79,7 +78,9 @@ void SyncCtrlObj::setExpTime(double exp_time)
 //-----------------------------------------------------
 void SyncCtrlObj::getExpTime(double& exp_time)
 {
-	m_cam.getExpTime(exp_time);
+	double exp_time_ms;
+	m_cam.getExpTime(exp_time_ms);        
+	exp_time = exp_time_ms * 1E-3;
 }
 
 //-----------------------------------------------------
@@ -120,14 +121,14 @@ void SyncCtrlObj::getNbHwFrames(int& nb_frames)
 void SyncCtrlObj::getValidRanges(ValidRangesType& valid_ranges)
 {
 	DEB_MEMBER_FUNCT();
-	double min_time;
-	double max_time;
+	double min_time_ms;
+	double max_time_ms;
 
-	m_cam.getExpTimeRange(min_time, max_time);
-	valid_ranges.min_exp_time = min_time;
-	valid_ranges.max_exp_time = max_time;
+	m_cam.getExpTimeRange(min_time_ms, max_time_ms);
+	valid_ranges.min_exp_time = min_time_ms * 1E-3;
+	valid_ranges.max_exp_time = max_time_ms * 1E-3;
 
-	m_cam.getLatTimeRange(min_time, max_time);
-	valid_ranges.min_lat_time = min_time;
-	valid_ranges.max_lat_time = max_time;
+	m_cam.getLatTimeRange(min_time_ms, max_time_ms);
+	valid_ranges.min_lat_time = min_time_ms * 1E-3;
+	valid_ranges.max_lat_time = max_time_ms * 1E-3;
 }

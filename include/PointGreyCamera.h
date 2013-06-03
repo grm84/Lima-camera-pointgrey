@@ -46,7 +46,7 @@ namespace PointGrey
 {
 /*******************************************************************
  * \class Camera
- * \brief object controlling the Point Grey camera via Pylon driver
+ * \brief object controlling the Point Grey camera via FlyCapture driver
  *******************************************************************/
 class VideoCtrlObj;
 class Camera : public HwMaxImageSizeCallbackGen
@@ -90,7 +90,7 @@ public:
 
 	void getExpTime(double& exp_time);
 	void setExpTime(double  exp_time);
-	void getExpTimeRange(double& min_exp_time, double& max_exp_time) const;
+	void getExpTimeRange(double& min_exp_time, double& max_exp_time);
 
 	void getLatTime(double& lat_time);
 	void setLatTime(double  lat_time);
@@ -111,25 +111,35 @@ public:
 	void setBin(const Bin& bin);
 
 	// camera specific
-	void getGain(double& gain);
-	void setGain(double  gain);
-
 	void getPacketSize(int& packet_size);
 	void setPacketSize(int  packet_size);
 
 	void getPacketDelay(int& packet_delay);
 	void setPacketDelay(int  packet_delay);
 
-	void getAutoExpTime(bool& auto_frame_rate) const;
+	void getGain(double& gain);
+	void setGain(double  gain);
+	void getGainRange(double& min_gain, double& max_gain);
+
+	void getFrameRate(double& frame_rate);
+	void setFrameRate(double  frame_rate);
+	void getFrameRateRange(double& min_frame_rate, double& max_frame_rate);
+
+	void getAutoExpTime(bool& auto_frame_rate);
 	void setAutoExpTime(bool  auto_exp_time);
 
-	void getAutoGain(bool& auto_gain) const;
+	void getAutoGain(bool& auto_gain);
 	void setAutoGain(bool  auto_gain);
 
+	void getAutoFrameRate(bool& auto_frame_rate);
+	void setAutoFrameRate(bool  auto_frame_rate);
 protected:
-	void _getPropertyInfo(FlyCapture2::PropertyInfo *property_info);
-	void _getProperty(FlyCapture2::Property *property);
-	void _setProperty(FlyCapture2::Property *property);
+	// property management
+	void _getPropertyValue(FlyCapture2::PropertyType type, double& value);
+	void _setPropertyValue(FlyCapture2::PropertyType type, double  value);
+	void _getPropertyRange(FlyCapture2::PropertyType type, double& min_value, double& max_value);
+	void _getPropertyAutoMode(FlyCapture2::PropertyType type, bool& auto_mode);
+	void _setPropertyAutoMode(FlyCapture2::PropertyType type, bool auto_mode);
 
 	void _getImageSettingsInfo();
 	void _applyImageSettings();
@@ -155,18 +165,10 @@ private:
 
 	Camera_t                 *m_camera;
 	FlyCapture2::CameraInfo   m_camera_info;
-	FlyCapture2::Error 		  m_error;
+	FlyCapture2::Error        m_error;
 
 	ImageSettingsInfo_t       m_image_settings_info;
 	ImageSettings_t           m_image_settings;
-
-	FlyCapture2::Property     m_frame_rate_property,
-	m_exp_time_property,
-	m_gain_property;
-
-	FlyCapture2::PropertyInfo m_frame_rate_property_info,
-	m_exp_time_property_info,
-	m_gain_property_info;
 };
 } // namespace PointGrey
 } // namespace lima

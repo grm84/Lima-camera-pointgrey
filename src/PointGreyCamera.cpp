@@ -24,8 +24,8 @@ private:
 //
 //---------------------------
 Camera::Camera(const int camera_serial,
-		const int packet_size,
-		const int packet_delay)
+               const int packet_size,
+               const int packet_delay)
 	: m_nb_frames(1)
 	, m_status(Ready)
 	, m_quit(false)
@@ -33,14 +33,6 @@ Camera::Camera(const int camera_serial,
 	, m_thread_running(true)
 	, m_image_number(0)
 	, m_camera(NULL)
-	// camera properties
-	, m_frame_rate_property(FlyCapture2::FRAME_RATE)
-	, m_exp_time_property(FlyCapture2::SHUTTER)
-	, m_gain_property(FlyCapture2::GAIN)
-	// property info
-	, m_frame_rate_property_info(FlyCapture2::FRAME_RATE)
-	, m_exp_time_property_info(FlyCapture2::SHUTTER)
-	, m_gain_property_info(FlyCapture2::GAIN)
 {
 	DEB_CONSTRUCTOR();
 
@@ -86,41 +78,9 @@ Camera::Camera(const int camera_serial,
 
 	_applyImageSettings();
 
-	// get frame rate property
-	_getPropertyInfo(&m_frame_rate_property_info);
-	_getProperty(&m_frame_rate_property);
-
-	// set auto frame rate, if supported
-	// control off means that the current frame rate will not limit
-	// the range of valid values for the exposure time property. the
-	// frame rate will be adjusted to allow the requested exposure time.
-	m_frame_rate_property.onOff = false;
-	m_frame_rate_property.autoManualMode = m_frame_rate_property_info.autoSupported;
-
-	_setProperty(&m_frame_rate_property);
-
-	// get exp time property
-	_getPropertyInfo(&m_exp_time_property_info);
-	_getProperty(&m_exp_time_property);
-
-	// set auto exp time, if supported
-	m_exp_time_property.onOff = true;
-	m_exp_time_property.absControl = true;
-	m_exp_time_property.autoManualMode = m_exp_time_property_info.autoSupported;
-
-	_setProperty(&m_exp_time_property);
-
-	// Get gain property
-	_getPropertyInfo(&m_gain_property_info);
-	_getProperty(&m_gain_property);
-
-	// set auto gain, if supported
-	m_gain_property.onOff = true;
-	m_gain_property.absControl = true;
-	m_gain_property.autoManualMode = m_gain_property_info.autoSupported;
-
-	_setProperty(&m_gain_property);
-
+	// Set auto frame rate
+	setAutoFrameRate(true);
+        
 	//Acquisition  Thread
 	m_acq_thread = new _AcqThread(*this);
 	m_acq_thread->start();
@@ -362,9 +322,9 @@ void Camera::setImageType(ImageType type)
 
 	old_format = m_image_settings.pixelFormat;
 
-    switch(type)
-    {
-    case Bpp8:
+	switch(type)
+	{
+	case Bpp8:
 		new_format = FlyCapture2::PIXEL_FORMAT_MONO8;
 		break;
 	case Bpp16:
@@ -429,7 +389,7 @@ void Camera::setTrigMode(TrigMode mode)
 	if (m_error != FlyCapture2::PGRERROR_OK)
 		THROW_HW_ERROR(Error) << "Unable to get trigger mode info from camera: " << m_error.GetDescription();
 
-	if ( not triggerModeInfo.present)
+	if (!triggerModeInfo.present)
 	{
 		DEB_ERROR() << "Camera does not support external trigger";
 		return;
@@ -463,72 +423,6 @@ void Camera::setTrigMode(TrigMode mode)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Camera::getExpTime(double& exp_time)
-{
-	DEB_MEMBER_FUNCT();
-
-	if (m_exp_time_property.autoManualMode)
-		// value might have changed
-		_getProperty(&m_exp_time_property);
-
-	exp_time = 1.0E-3 * m_exp_time_property.absValue;
-	DEB_RETURN() << DEB_VAR1(exp_time);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Camera::setExpTime(double exp_time)
-{
-	DEB_MEMBER_FUNCT();
-	DEB_PARAM() << DEB_VAR1(exp_time);
-
-	m_exp_time_property.autoManualMode = false;
-	m_exp_time_property.absValue = 1.0E3 * exp_time;
-
-	_setProperty(&m_exp_time_property);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Camera::getAutoExpTime(bool &auto_exp_time) const
-{
-	DEB_MEMBER_FUNCT();
-
-	auto_exp_time = m_exp_time_property.autoManualMode;
-
-	DEB_RETURN() << DEB_VAR1(auto_exp_time);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Camera::setAutoExpTime(bool auto_exp_time)
-{
-	DEB_MEMBER_FUNCT();
-	DEB_PARAM() << DEB_VAR1(auto_exp_time);
-
-	if (!m_exp_time_property_info.autoSupported )
-	{
-		DEB_WARNING() << "Auto exposure is not supported";
-		return;
-	}
-
-	m_exp_time_property.autoManualMode = auto_exp_time;
-
-	// do a "one push" adjustment, if supported
-	if (m_exp_time_property_info.onePushSupported)
-		m_exp_time_property.onePush = auto_exp_time;
-
-	_setProperty(&m_exp_time_property);
-
-	m_exp_time_property.onePush = false;
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
 void Camera::getLatTime(double& lat_time)
 {
 	// latency is not managed
@@ -545,17 +439,6 @@ void Camera::setLatTime(double lat_time)
 	// latency is not managed
 	DEB_MEMBER_FUNCT();
 	DEB_PARAM() << DEB_VAR1(lat_time);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Camera::getExpTimeRange(double& min_exp_time, double& max_exp_time) const
-{
-	DEB_MEMBER_FUNCT();
-	min_exp_time = 1E-3 * m_exp_time_property_info.absMin;
-	max_exp_time = 1E-3 * m_exp_time_property_info.absMax;
-	DEB_RETURN() << DEB_VAR2(min_exp_time, max_exp_time);
 }
 
 //-----------------------------------------------------
@@ -614,7 +497,7 @@ void Camera::getStatus(Camera::Status& status)
 //-----------------------------------------------------
 HwBufferCtrlObj* Camera::getBufferCtrlObj()
 {
-    return &m_buffer_ctrl_obj;
+	return &m_buffer_ctrl_obj;
 }
 
 //-----------------------------------------------------
@@ -673,18 +556,62 @@ void Camera::setBin(const Bin &aBin)
 }
 
 //-----------------------------------------------------
+// exposure
+//-----------------------------------------------------
+void Camera::getExpTime(double& exp_time)
+{
+	DEB_MEMBER_FUNCT();
+	_getPropertyValue(FlyCapture2::SHUTTER, exp_time);
+	DEB_RETURN() << DEB_VAR1(exp_time);
+}
+
+//-----------------------------------------------------
 //
+//-----------------------------------------------------
+void Camera::setExpTime(double exp_time)
+{
+	DEB_MEMBER_FUNCT();
+	DEB_PARAM() << DEB_VAR1(exp_time);
+	_setPropertyValue(FlyCapture2::SHUTTER, exp_time);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getExpTimeRange(double& min_exp_time, double& max_exp_time)
+{
+	DEB_MEMBER_FUNCT();
+	_getPropertyRange(FlyCapture2::SHUTTER, min_exp_time, max_exp_time);
+	DEB_RETURN() << DEB_VAR2(min_exp_time, max_exp_time);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getAutoExpTime(bool &auto_exp_time)
+{
+	DEB_MEMBER_FUNCT();
+	_getPropertyAutoMode(FlyCapture2::SHUTTER, auto_exp_time);
+        DEB_RETURN() << DEB_VAR1(auto_exp_time);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::setAutoExpTime(bool auto_exp_time)
+{
+	DEB_MEMBER_FUNCT();
+	_setPropertyAutoMode(FlyCapture2::SHUTTER, auto_exp_time);
+	DEB_RETURN() << DEB_VAR1(auto_exp_time);
+}
+
+//-----------------------------------------------------
+// gain
 //-----------------------------------------------------
 void Camera::getGain(double& gain)
 {
 	DEB_MEMBER_FUNCT();
-
-	if (m_gain_property.autoManualMode)
-		// value might have changed
-		_getProperty(&m_gain_property);
-
-	gain = m_gain_property.absValue / m_gain_property_info.absMax;
-
+	_getPropertyValue(FlyCapture2::GAIN, gain);
 	DEB_RETURN() << DEB_VAR1(gain);
 }
 
@@ -695,20 +622,26 @@ void Camera::setGain(double gain)
 {
 	DEB_MEMBER_FUNCT();
 	DEB_PARAM() << DEB_VAR1(gain);
-
-	m_gain_property.autoManualMode = false;
-	m_gain_property.absValue = gain * m_gain_property_info.absMax;
-
-	_setProperty(&m_gain_property);
+	_setPropertyValue(FlyCapture2::GAIN, gain);
 }
 
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Camera::getAutoGain(bool& auto_gain) const
+void Camera::getGainRange(double& min_gain, double& max_gain)
 {
 	DEB_MEMBER_FUNCT();
-	auto_gain = m_gain_property.autoManualMode;
+	_getPropertyRange(FlyCapture2::GAIN, min_gain, max_gain);
+	DEB_RETURN() << DEB_VAR2(min_gain, max_gain);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getAutoGain(bool& auto_gain)
+{
+	DEB_MEMBER_FUNCT();
+	_getPropertyAutoMode(FlyCapture2::GAIN, auto_gain);
 	DEB_RETURN() << DEB_VAR1(auto_gain);
 }
 
@@ -719,44 +652,88 @@ void Camera::setAutoGain(bool auto_gain)
 {
 	DEB_MEMBER_FUNCT();
 	DEB_PARAM() << DEB_VAR1(auto_gain);
-
-	if (!m_gain_property_info.autoSupported)
-	{
-		DEB_WARNING() << "Auto gain is not supported";
-		return;
-	}
-
-	m_gain_property.autoManualMode = auto_gain;
-
-	// do a "one push" adjustment, if supported
-	if (m_gain_property_info.onePushSupported)
-		m_gain_property.onePush = auto_gain;
-
-	_setProperty(&m_gain_property);
-
-	m_gain_property.onePush = false;
+	_setPropertyAutoMode(FlyCapture2::GAIN, auto_gain);
 }
 
-void Camera::_getPropertyInfo(FlyCapture2::PropertyInfo *property_info)
+//-----------------------------------------------------
+// frame rate
+//-----------------------------------------------------
+void Camera::getFrameRate(double& frame_rate)
 {
 	DEB_MEMBER_FUNCT();
-	m_error = m_camera->GetPropertyInfo(property_info);
-	if (m_error != FlyCapture2::PGRERROR_OK)
-		THROW_HW_ERROR(Error) << "Failed to get camera property info: " << m_error.GetDescription();
+	_getPropertyValue(FlyCapture2::FRAME_RATE, frame_rate);
+	DEB_RETURN() << DEB_VAR1(frame_rate);
 }
 
-void Camera::_getProperty(FlyCapture2::Property *property)
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::setFrameRate(double frame_rate)
 {
 	DEB_MEMBER_FUNCT();
-	m_error = m_camera->GetProperty(property);
+	DEB_PARAM() << DEB_VAR1(frame_rate);
+	_setPropertyValue(FlyCapture2::FRAME_RATE, frame_rate);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getFrameRateRange(double& min_frame_rate, double& max_frame_rate)
+{
+	DEB_MEMBER_FUNCT();
+	_getPropertyRange(FlyCapture2::FRAME_RATE, min_frame_rate, max_frame_rate);
+	DEB_RETURN() << DEB_VAR2(min_frame_rate, max_frame_rate);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getAutoFrameRate(bool& auto_frame_rate)
+{
+	DEB_MEMBER_FUNCT();
+	_getPropertyAutoMode(FlyCapture2::FRAME_RATE, auto_frame_rate);
+	DEB_RETURN() << DEB_VAR1(auto_frame_rate);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::setAutoFrameRate(bool auto_frame_rate)
+{
+	DEB_MEMBER_FUNCT();
+	DEB_PARAM() << DEB_VAR1(auto_frame_rate);
+	_setPropertyAutoMode(FlyCapture2::FRAME_RATE, auto_frame_rate);
+}
+
+//-----------------------------------------------------
+// property management
+//-----------------------------------------------------
+void Camera::_getPropertyValue(FlyCapture2::PropertyType type, double& value)
+{
+	DEB_MEMBER_FUNCT();
+	FlyCapture2::Property property(type);
+	
+	m_error = m_camera->GetProperty(&property);
 	if (m_error != FlyCapture2::PGRERROR_OK)
 		THROW_HW_ERROR(Error) << "Failed to get camera property: " << m_error.GetDescription();
+	
+	value = property.absValue;
 }
 
-void Camera::_setProperty(FlyCapture2::Property *property)
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::_setPropertyValue(FlyCapture2::PropertyType type, double  value)
 {
 	DEB_MEMBER_FUNCT();
-	m_error = m_camera->SetProperty(property);
+	FlyCapture2::Property property(type);
+	
+	property.onOff = true;
+	property.autoManualMode = false;
+	property.absControl = true;
+	property.absValue = value;
+	
+	m_error = m_camera->SetProperty(&property);
 	if (m_error != FlyCapture2::PGRERROR_OK)
 		THROW_HW_ERROR(Error) << "Failed to set camera property: " << m_error.GetDescription();
 }
@@ -764,7 +741,54 @@ void Camera::_setProperty(FlyCapture2::Property *property)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Camera::_setStatus(Camera::Status status,bool force)
+void Camera::_getPropertyRange(FlyCapture2::PropertyType type, double& min_value, double& max_value)
+{
+	DEB_MEMBER_FUNCT();
+	FlyCapture2::PropertyInfo property_info(type);
+        
+	m_error = m_camera->GetPropertyInfo(&property_info);
+	if (m_error != FlyCapture2::PGRERROR_OK)
+		THROW_HW_ERROR(Error) << "Failed to get camera property info: " << m_error.GetDescription();
+
+	min_value = property_info.absMin;
+	max_value = property_info.absMax;
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::_getPropertyAutoMode(FlyCapture2::PropertyType type, bool& auto_mode)
+{
+	DEB_MEMBER_FUNCT();
+	FlyCapture2::Property property(type);
+        
+	m_error = m_camera->GetProperty(&property);
+	if (m_error != FlyCapture2::PGRERROR_OK)
+		THROW_HW_ERROR(Error) << "Failed to get camera property: " << m_error.GetDescription();
+	
+	auto_mode = property.autoManualMode;
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::_setPropertyAutoMode(FlyCapture2::PropertyType type, bool auto_mode)
+{
+	DEB_MEMBER_FUNCT();
+	FlyCapture2::Property property(type);
+	
+	property.onOff = not auto_mode;
+	property.autoManualMode = auto_mode;
+	
+	m_error = m_camera->SetProperty(&property);
+	if (m_error != FlyCapture2::PGRERROR_OK)
+		THROW_HW_ERROR(Error) << "Failed to set camera property: " << m_error.GetDescription();    
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::_setStatus(Camera::Status status, bool force)
 {
 	DEB_MEMBER_FUNCT();
 	AutoMutex alock(m_cond.mutex());
@@ -810,17 +834,13 @@ void Camera::_forcePGRY16Mode()
 	unsigned int value = 0;
 	m_error = m_camera->ReadRegister(k_imageDataFmtReg, &value);
 	if (m_error != FlyCapture2::PGRERROR_OK)
-	{
 		THROW_HW_ERROR(Error) << "Failed to read camera register: " << m_error.GetDescription();
-	}
 
 	value &= ~0x1;
 
 	m_error = m_camera->WriteRegister(k_imageDataFmtReg, value);
 	if (m_error != FlyCapture2::PGRERROR_OK)
-	{
 		THROW_HW_ERROR(Error) << "Failed to write camera register: " << m_error.GetDescription();
-	}
 }
 
 //---------------------------
@@ -861,7 +881,7 @@ void Camera::_AcqThread::threadFunction()
 	{
 		while(!m_cam.m_acq_started && !m_cam.m_quit)
 		{
-			DEB_TRACE() << "wait";
+			DEB_TRACE() << "Wait";
 			m_cam.m_thread_running = false;
 			m_cam.m_cond.broadcast();
 			m_cam.m_cond.wait();
