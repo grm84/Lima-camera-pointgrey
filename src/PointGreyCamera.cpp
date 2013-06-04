@@ -256,7 +256,18 @@ void Camera::startAcq()
 void Camera::stopAcq()
 {
 	DEB_MEMBER_FUNCT();
-	_stopAcq(false);
+	AutoMutex lock(m_cond.mutex());	
+	if(!m_acq_started)
+		return;
+	m_acq_started = false;
+	lock.unlock();
+	
+	DEB_TRACE() << "Stop acquisition";
+	m_error = m_camera->StopCapture();
+	if (m_error != FlyCapture2::PGRERROR_OK)
+		THROW_HW_ERROR(Error) << "Unable to stop image capture: " << m_error.GetDescription();
+
+	_setStatus(Camera::Ready, false);
 }
 
 //-----------------------------------------------------
@@ -796,37 +807,6 @@ void Camera::_setStatus(Camera::Status status, bool force)
 		m_status = status;
 }
 
-//---------------------------
-//- Camera::_stopAcq()
-//---------------------------
-void Camera::_stopAcq(bool internalFlag)
-{
-	DEB_MEMBER_FUNCT();
-	AutoMutex lock(m_cond.mutex());
-
-	if(m_status == Camera::Ready)
-		return;
-
-	m_acq_started = false;
-
-	// wait for the acq thread to finish
-	while(!internalFlag && m_thread_running)
-		m_cond.wait();
-
-	lock.unlock();
-
-	//Let the acq thread stop the acquisition
-	if(!internalFlag)
-		return;
-
-	DEB_TRACE() << "Stop acquisition";
-	m_error = m_camera->StopCapture();
-	if (m_error != FlyCapture2::PGRERROR_OK)
-		THROW_HW_ERROR(Error) << "Unable to stop image capture: " << m_error.GetDescription();
-
-	_setStatus(Camera::Ready, false);
-}
-
 void Camera::_forcePGRY16Mode()
 {
 	DEB_MEMBER_FUNCT();
@@ -902,10 +882,6 @@ void Camera::_AcqThread::threadFunction()
 			error = m_cam.m_camera->RetrieveBuffer(&image);
 			if (error == FlyCapture2::PGRERROR_OK)
 			{
-				// check if acquisition has been stopped
-				if (!m_cam.m_acq_started)
-					break;
-
 				// Grabbing was successful, process image
 				m_cam._setStatus(Camera::Readout, false);
 
@@ -919,6 +895,11 @@ void Camera::_AcqThread::threadFunction()
 				continue_acq = buffer_mgr.newFrameReady(frame_info);
 				m_cam.m_image_number++;
 			}
+			else if (error == FlyCapture2::PGRERROR_ISOCH_NOT_STARTED)
+			{
+				DEB_TRACE() << "Acquisition aborted";
+				continue_acq = false;
+			}
 			else if (error == FlyCapture2::PGRERROR_IMAGE_CONSISTENCY_ERROR)
 			{
 				DEB_WARNING() << "No image acquired: " << error.GetDescription();
@@ -930,7 +911,7 @@ void Camera::_AcqThread::threadFunction()
 				continue_acq = false;
 			}
 		}
-		m_cam._stopAcq(true);
+		m_cam.stopAcq();
 		lock.lock();
 	}
 }
