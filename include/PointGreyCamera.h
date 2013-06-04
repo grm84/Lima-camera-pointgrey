@@ -92,10 +92,6 @@ public:
 	void setExpTime(double  exp_time);
 	void getExpTimeRange(double& min_exp_time, double& max_exp_time);
 
-	void getLatTime(double& lat_time);
-	void setLatTime(double  lat_time);
-	void getLatTimeRange(double& min_lat_time, double& max_lat_time) const;
-
 	void getNbFrames(int& nb_frames);
 	void setNbFrames(int  nb_frames);
 	void getNbHwAcquiredFrames(int &nb_acq_frames);

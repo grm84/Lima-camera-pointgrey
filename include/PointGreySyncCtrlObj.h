@@ -60,7 +60,13 @@ public:
 	virtual void getValidRanges(ValidRangesType& valid_ranges);
 
 private:
-	Camera& m_cam;
+	void _adjustFrameRate();
+	
+	Camera& m_cam;    
+	double m_exp_time;
+	double m_lat_time;    
+	double m_max_acq_period;
+	ValidRangesType m_valid_ranges;
 };
 
 } // namespace PointGrey

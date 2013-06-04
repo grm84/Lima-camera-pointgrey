@@ -35,10 +35,6 @@ namespace PointGrey
     void setExpTime(double  exp_time);
     void getExpTimeRange(double& min_exp_time /Out/, double& max_exp_time /Out/);
 
-    void getLatTime(double& lat_time /Out/);
-    void setLatTime(double  lat_time);
-    void getLatTimeRange(double& min_lat_time /Out/, double& max_lat_time /Out/) const;
-
     void getNbFrames(int& nb_frames /Out/);
     void setNbFrames(int  nb_frames);
 

@@ -77,9 +77,6 @@ Camera::Camera(const int camera_serial,
 	m_image_settings.pixelFormat = FlyCapture2::PIXEL_FORMAT_MONO8;
 
 	_applyImageSettings();
-
-	// Set auto frame rate
-	setAutoFrameRate(true);
         
 	//Acquisition  Thread
 	m_acq_thread = new _AcqThread(*this);
@@ -429,38 +426,6 @@ void Camera::setTrigMode(TrigMode mode)
 	m_error = m_camera->SetTriggerMode( &triggerMode );
 	if (m_error != FlyCapture2::PGRERROR_OK)
 		THROW_HW_ERROR(Error) << "Unable to set trigger mode settings: " << m_error.GetDescription();
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Camera::getLatTime(double& lat_time)
-{
-	// latency is not managed
-	DEB_MEMBER_FUNCT();
-	lat_time = 0;
-	DEB_RETURN() << DEB_VAR1(lat_time);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Camera::setLatTime(double lat_time)
-{
-	// latency is not managed
-	DEB_MEMBER_FUNCT();
-	DEB_PARAM() << DEB_VAR1(lat_time);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Camera::getLatTimeRange(double& min_lat_time, double& max_lat_time) const
-{
-	DEB_MEMBER_FUNCT();
-	min_lat_time = 0;
-	max_lat_time = 0;
-	DEB_RETURN() << DEB_VAR2(min_lat_time, max_lat_time);
 }
 
 //-----------------------------------------------------
