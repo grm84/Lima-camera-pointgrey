@@ -28,47 +28,45 @@ namespace lima
 {
 namespace PointGrey
 {
-
 class Camera;
 
 /*******************************************************************
  * \class SyncCtrlObj
  * \brief Control object providing PointGrey synchronization interface
  *******************************************************************/
-
 class SyncCtrlObj : public HwSyncCtrlObj
 {
-	DEB_CLASS_NAMESPC(DebModCamera, "SyncCtrlObj", "PointGrey");
+    DEB_CLASS_NAMESPC(DebModCamera, "SyncCtrlObj", "PointGrey");
 
 public:
-	SyncCtrlObj(Camera& cam);
-	virtual ~SyncCtrlObj() {};
+    SyncCtrlObj(Camera& cam);
 
-	virtual bool checkTrigMode(TrigMode trig_mode);
-	virtual void setTrigMode(TrigMode  trig_mode);
-	virtual void getTrigMode(TrigMode& trig_mode);
+    virtual ~SyncCtrlObj() {};
 
-	virtual void setExpTime(double  exp_time);
-	virtual void getExpTime(double& exp_time);
+    virtual bool checkTrigMode(TrigMode trig_mode);
+    virtual void setTrigMode(TrigMode trig_mode);
+    virtual void getTrigMode(TrigMode& trig_mode);
 
-	virtual void setLatTime(double  lat_time);
-	virtual void getLatTime(double& lat_time);
+    virtual void setExpTime(double exp_time);
+    virtual void getExpTime(double& exp_time);
 
-	virtual void setNbHwFrames(int  nb_frames);
-	virtual void getNbHwFrames(int& nb_frames);
+    virtual void setLatTime(double lat_time);
+    virtual void getLatTime(double& lat_time);
 
-	virtual void getValidRanges(ValidRangesType& valid_ranges);
+    virtual void setNbHwFrames(int nb_frames);
+    virtual void getNbHwFrames(int& nb_frames);
+
+    virtual void getValidRanges(ValidRangesType& valid_ranges);
 
 private:
-	void _adjustFrameRate();
-	
-	Camera& m_cam;    
-	double m_exp_time;
-	double m_lat_time;    
-	double m_max_acq_period;
-	ValidRangesType m_valid_ranges;
-};
+    void _adjustFrameRate();
 
+    Camera& m_cam;
+    double m_exp_time;
+    double m_lat_time;
+    double m_max_acq_period;
+    ValidRangesType m_valid_ranges;
+};
 } // namespace PointGrey
 } // namespace lima
 

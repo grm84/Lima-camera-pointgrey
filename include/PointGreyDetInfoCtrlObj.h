@@ -28,40 +28,38 @@ namespace lima
 {
 namespace PointGrey
 {
-
 class Camera;
 
 /*******************************************************************
  * \class DetInfoCtrlObj
  * \brief Control object providing PointGrey detector info interface
  *******************************************************************/
-
 class DetInfoCtrlObj : public HwDetInfoCtrlObj
 {
-	DEB_CLASS_NAMESPC(DebModCamera, "DetInfoCtrlObj", "PointGrey");
+    DEB_CLASS_NAMESPC(DebModCamera, "DetInfoCtrlObj", "PointGrey");
 
 public:
-	DetInfoCtrlObj(Camera& cam);
-	virtual ~DetInfoCtrlObj() {};
+    DetInfoCtrlObj(Camera& cam);
 
-	virtual void getMaxImageSize(Size& max_image_size);
-	virtual void getDetectorImageSize(Size& det_image_size);
+    virtual ~DetInfoCtrlObj() {};
 
-	virtual void getDefImageType(ImageType& def_image_type);
-	virtual void getCurrImageType(ImageType& curr_image_type);
-	virtual void setCurrImageType(ImageType  curr_image_type);
+    virtual void getMaxImageSize(Size& max_image_size);
+    virtual void getDetectorImageSize(Size& det_image_size);
 
-	virtual void getPixelSize(double& x_size,double &y_size);
-	virtual void getDetectorType(std::string& det_type);
-	virtual void getDetectorModel(std::string& det_model);
+    virtual void getDefImageType(ImageType& def_image_type);
+    virtual void getCurrImageType(ImageType& curr_image_type);
+    virtual void setCurrImageType(ImageType curr_image_type);
 
-	virtual void registerMaxImageSizeCallback(HwMaxImageSizeCallback& cb);
-	virtual void unregisterMaxImageSizeCallback(HwMaxImageSizeCallback& cb);
+    virtual void getPixelSize(double& x_size, double &y_size);
+    virtual void getDetectorType(std::string& det_type);
+    virtual void getDetectorModel(std::string& det_model);
+
+    virtual void registerMaxImageSizeCallback(HwMaxImageSizeCallback& cb);
+    virtual void unregisterMaxImageSizeCallback(HwMaxImageSizeCallback& cb);
 
 private:
-	Camera& m_cam;
+    Camera& m_cam;
 };
-
 } // namespace PointGrey
 } // namespace lima
 

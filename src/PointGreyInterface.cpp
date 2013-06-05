@@ -29,33 +29,32 @@ using namespace lima;
 using namespace lima::PointGrey;
 using namespace std;
 
-
 /*******************************************************************
  * \brief Hw Interface constructor
  *******************************************************************/
-
 Interface::Interface(Camera& cam)
-	: m_cam(cam)
+    : m_cam(cam)
 {
-	DEB_CONSTRUCTOR();
-	m_det_info = new DetInfoCtrlObj(cam);
-	m_sync = new SyncCtrlObj(cam);
+    DEB_CONSTRUCTOR();
+    m_det_info = new DetInfoCtrlObj(cam);
+    m_sync = new SyncCtrlObj(cam);
 
-	m_cap_list.push_back(HwCap(m_det_info));
-	m_cap_list.push_back(HwCap(m_sync));
+    m_cap_list.push_back(HwCap(m_det_info));
+    m_cap_list.push_back(HwCap(m_sync));
 
-	HwBufferCtrlObj *buffer = cam.getBufferCtrlObj();
-	m_cap_list.push_back(HwCap(buffer));
+    HwBufferCtrlObj *buffer = cam.getBufferCtrlObj();
+    m_cap_list.push_back(HwCap(buffer));
 }
 
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
+
 Interface::~Interface()
 {
-	DEB_DESTRUCTOR();
-	delete m_det_info;
-	delete m_sync;
+    DEB_DESTRUCTOR();
+    delete m_det_info;
+    delete m_sync;
 }
 
 //-----------------------------------------------------
@@ -63,8 +62,8 @@ Interface::~Interface()
 //-----------------------------------------------------
 void Interface::getCapList(HwInterface::CapList &cap_list) const
 {
-	DEB_MEMBER_FUNCT();
-	cap_list = m_cap_list;
+    DEB_MEMBER_FUNCT();
+    cap_list = m_cap_list;
 }
 
 //-----------------------------------------------------
@@ -72,10 +71,10 @@ void Interface::getCapList(HwInterface::CapList &cap_list) const
 //-----------------------------------------------------
 void Interface::reset(ResetLevel reset_level)
 {
-	DEB_MEMBER_FUNCT();
-	DEB_PARAM() << DEB_VAR1(reset_level);
-	stopAcq();
-	m_cam._setStatus(Camera::Ready,true);
+    DEB_MEMBER_FUNCT();
+    DEB_PARAM() << DEB_VAR1(reset_level);
+    stopAcq();
+    m_cam._setStatus(Camera::Ready, true);
 }
 
 //-----------------------------------------------------
@@ -83,8 +82,8 @@ void Interface::reset(ResetLevel reset_level)
 //-----------------------------------------------------
 void Interface::prepareAcq()
 {
-	DEB_MEMBER_FUNCT();
-	m_cam.prepareAcq();
+    DEB_MEMBER_FUNCT();
+    m_cam.prepareAcq();
 }
 
 //-----------------------------------------------------
@@ -92,8 +91,8 @@ void Interface::prepareAcq()
 //-----------------------------------------------------
 void Interface::startAcq()
 {
-	DEB_MEMBER_FUNCT();
-	m_cam.startAcq();
+    DEB_MEMBER_FUNCT();
+    m_cam.startAcq();
 }
 
 //-----------------------------------------------------
@@ -101,8 +100,8 @@ void Interface::startAcq()
 //-----------------------------------------------------
 void Interface::stopAcq()
 {
-	DEB_MEMBER_FUNCT();
-	m_cam.stopAcq();
+    DEB_MEMBER_FUNCT();
+    m_cam.stopAcq();
 }
 
 //-----------------------------------------------------
@@ -110,33 +109,33 @@ void Interface::stopAcq()
 //-----------------------------------------------------
 void Interface::getStatus(StatusType& status)
 {
-	DEB_MEMBER_FUNCT();
-	Camera::Status pg_status = Camera::Ready;
-	m_cam.getStatus(pg_status);
-	switch (pg_status)
-	{
-	case Camera::Ready:
-		status.det = DetIdle;
-		status.acq = AcqReady;
-		break;
-	case Camera::Exposure:
-		status.det = DetExposure;
-		status.acq = AcqRunning;
-		break;
-	case Camera::Readout:
-		status.det = DetReadout;
-		status.acq = AcqRunning;
-		break;
-	case Camera::Latency:
-		status.det = DetLatency;
-		status.acq = AcqRunning;
-		break;
-	case Camera::Fault:
-		status.det = DetFault;
-		status.acq = AcqFault;
-	}
-	status.det_mask = DetExposure | DetReadout | DetLatency;
-	DEB_RETURN() << DEB_VAR1(status);
+    DEB_MEMBER_FUNCT();
+    Camera::Status pg_status = Camera::Ready;
+    m_cam.getStatus(pg_status);
+    switch (pg_status)
+    {
+    case Camera::Ready:
+        status.det = DetIdle;
+        status.acq = AcqReady;
+        break;
+    case Camera::Exposure:
+        status.det = DetExposure;
+        status.acq = AcqRunning;
+        break;
+    case Camera::Readout:
+        status.det = DetReadout;
+        status.acq = AcqRunning;
+        break;
+    case Camera::Latency:
+        status.det = DetLatency;
+        status.acq = AcqRunning;
+        break;
+    case Camera::Fault:
+        status.det = DetFault;
+        status.acq = AcqFault;
+    }
+    status.det_mask = DetExposure | DetReadout | DetLatency;
+    DEB_RETURN() << DEB_VAR1(status);
 }
 
 //-----------------------------------------------------
@@ -144,8 +143,8 @@ void Interface::getStatus(StatusType& status)
 //-----------------------------------------------------
 int Interface::getNbHwAcquiredFrames()
 {
-	DEB_MEMBER_FUNCT();
-	int acq_frames;
-	m_cam.getNbHwAcquiredFrames(acq_frames);
-	return acq_frames;
+    DEB_MEMBER_FUNCT();
+    int acq_frames;
+    m_cam.getNbHwAcquiredFrames(acq_frames);
+    return acq_frames;
 }

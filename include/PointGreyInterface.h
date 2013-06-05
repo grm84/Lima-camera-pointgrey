@@ -28,43 +28,39 @@ namespace lima
 {
 namespace PointGrey
 {
-
 class Camera;
 class DetInfoCtrlObj;
 class SyncCtrlObj;
-class VideoCtrlObj;
 
 /*******************************************************************
  * \class Interface
  * \brief PointGrey hardware interface
  *******************************************************************/
-
 class Interface : public HwInterface
 {
-	DEB_CLASS_NAMESPC(DebModCamera, "PointGreyInterface", "PointGrey");
+    DEB_CLASS_NAMESPC(DebModCamera, "PointGreyInterface", "PointGrey");
 
 public:
-	Interface(Camera& cam);
-	virtual ~Interface();
+    Interface(Camera& cam);
+    virtual ~Interface();
 
-	//- From HwInterface
-	virtual void getCapList(CapList&) const;
-	virtual void reset(ResetLevel reset_level);
-	virtual void prepareAcq();
-	virtual void startAcq();
-	virtual void stopAcq();
-	virtual void getStatus(StatusType& status);
-	virtual int getNbHwAcquiredFrames();
+    //- From HwInterface
+    virtual void getCapList(CapList&) const;
+    virtual void reset(ResetLevel reset_level);
+    virtual void prepareAcq();
+    virtual void startAcq();
+    virtual void stopAcq();
+    virtual void getStatus(StatusType& status);
+    virtual int getNbHwAcquiredFrames();
 
-	Camera& getCamera(){ return m_cam; }
+    Camera& getCamera() { return m_cam; }
 
 private:
-	Camera&         m_cam;
-	CapList         m_cap_list;
-	DetInfoCtrlObj *m_det_info;
-	SyncCtrlObj    *m_sync;
+    Camera& m_cam;
+    CapList m_cap_list;
+    DetInfoCtrlObj *m_det_info;
+    SyncCtrlObj *m_sync;
 };
-
 } // namespace PointGrey
 } // namespace lima
 
