@@ -52,7 +52,7 @@ The minimum configuration file is *config.inc* :
 Initialisation and Capabilities
 ````````````````````````````````
 Implementing a new plugin for new detector is driven by the LIMA framework but
-the developer has some freedoms to choose which standard and specific features will be make available. This section is supposed to give you the correction inforation regarding how the camera is exported within the LIMA framework.
+the developer has some freedoms to choose which standard and specific features will be make available. This section is supposed to give you good knowledge regarding camera features within the LIMA framework.
 
 
 Camera initialisation
@@ -62,7 +62,7 @@ The camera has to be initialized using the PointGreyCamera class. The default co
 In Addition one can provide both packate_size and packet_delay parameters. By default no value is passed.
 
 
-Std capabilites
+Std capabilities
 ................
 
 This plugin has been implement in respect of the mandatory capabilites but with some limitations which are due to the camera and SDK features.  We only provide here extra information for a better understanding of the capabilities for Andor cameras.
@@ -77,7 +77,7 @@ This plugin has been implement in respect of the mandatory capabilites but with 
  get/setTriggerMode(): Depending of the camera model, but some can not support any trigger mode. Otherwise the only implemented modes are IntTrig and ExtTrigSingle. IntTrigMult is normally a mandatory mode (for any camera) and will be implemented in next version.
 
 
-Optional capabilites
+Optional capabilities
 ........................
 
 None has been implemented for this camera plugin.
