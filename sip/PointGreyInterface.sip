@@ -6,7 +6,7 @@ namespace PointGrey
 #include <PointGreyInterface.h>
 %End
   public:
-    Interface(PointGrey::Camera& cam);
+    Interface(PointGrey::Camera& cam /KeepReference/);
     virtual ~Interface();
 
     //- from HwInterface
