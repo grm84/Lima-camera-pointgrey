@@ -22,7 +22,7 @@
 #ifndef POINTGREYSYNCCTRLOBJ_H
 #define POINTGREYSYNCCTRLOBJ_H
 
-#include "HwSyncCtrlObj.h"
+#include "lima/HwSyncCtrlObj.h"
 
 namespace lima
 {

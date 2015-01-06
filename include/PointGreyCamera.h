@@ -24,8 +24,8 @@
 
 #include <stdlib.h>
 #include <limits>
-#include "HwBufferMgr.h"
-#include "HwMaxImageSizeCallback.h"
+#include "lima/HwBufferMgr.h"
+#include "lima/HwMaxImageSizeCallback.h"
 
 #include "FlyCapture2.h"
 using namespace std;

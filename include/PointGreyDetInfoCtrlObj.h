@@ -22,7 +22,7 @@
 #ifndef POINTGREYDETINFOCTRLOBJ_H
 #define POINTGREYDETINFOCTRLOBJ_H
 
-#include "HwDetInfoCtrlObj.h"
+#include "lima/HwDetInfoCtrlObj.h"
 
 namespace lima
 {

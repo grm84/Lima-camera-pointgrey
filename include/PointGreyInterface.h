@@ -22,7 +22,7 @@
 #ifndef POINTGREYINTERFACE_H
 #define POINTGREYINTERFACE_H
 
-#include "HwInterface.h"
+#include "lima/HwInterface.h"
 
 namespace lima
 {
