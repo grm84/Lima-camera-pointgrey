@@ -1,7 +1,7 @@
 .. _camera-pointgrey:
 
 PointGrey
-----------
+---------
 
 .. image:: pointgrey.png 
      :width: 300px
@@ -124,7 +124,7 @@ This is a python code example for a simple test:
 .. code-block:: python
 
   from Lima import PointGrey
-  from lima impor Core
+  from lima import Core
 
   cam = PointGrey.Camera(13125072)
   hwint = PointGrey.Interface(cam)
@@ -134,10 +134,9 @@ This is a python code example for a simple test:
 
   # configure some hw parameters
   hwint.setAutoGain(True)
-  hwint.se
 
   # setting new file parameters and autosaving mode
-  saving=c.saving()
+  saving=control.saving()
 
   pars=saving.getParameters()
   pars.directory='/buffer/lcb18012/opisg/test_lima'
@@ -151,5 +150,15 @@ This is a python code example for a simple test:
   acq.setAcqExpoTime(0.01)
   acq.setNbImages(100) 
   
-  acq.prepareAcq()
-  acq.startAcq()
+  control.prepareAcq()
+  control.startAcq()
+
+  # wait for last image (#99) ready
+  lastimg = control.getStatus().ImageCounters.LastImageReady
+  while lastimg !=99:
+    time.sleep(.01)
+    lastimg = control.getStatus().ImageCounters.LastImageReady
+ 
+  # read the first image
+  im0 = control.ReadImage(0)
+
