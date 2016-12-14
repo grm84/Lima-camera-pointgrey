@@ -9,7 +9,7 @@ PointGrey
 
 Intoduction
 ```````````
-Poiint Grey is a world-leading designer and manufacturer of innovative, high-performance digital cameras for industrial, life science, and traffic applications. We offer a unique and comprehensive portfolio of USB 3.0, GigE, FireWire, USB 2.0 and Camera Link products known for their outstanding quality, ease of use, and unbeatable price-performance. 
+Point Grey is a world-leading designer and manufacturer of innovative, high-performance digital cameras for industrial, life science, and traffic applications. We offer a unique and comprehensive portfolio of USB 3.0, GigE, FireWire, USB 2.0 and Camera Link products known for their outstanding quality, ease of use, and unbeatable price-performance. 
 
 The Lima module as been tested only with this GigE cameras models:
   - Blackfly 1024x768 (model BFLY-PGE-05S2M)
