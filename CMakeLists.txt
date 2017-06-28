@@ -21,37 +21,36 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, see <http://www.gnu.org/licenses/>.
 ############################################################################
+set(NAME "pointgrey")
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--add-needed")
 
 #SOURCEs
-set(pointgrey_srcs src/PointGreyCamera.cpp  src/PointGreyInterface.cpp
+set(${NAME}_srcs src/PointGreyCamera.cpp  src/PointGreyInterface.cpp
 	 src/PointGreyDetInfoCtrlObj.cpp src/PointGreySyncCtrlObj.cpp)
 
 file(STRINGS "VERSION" pointgrey_vers)
-add_library(limapointgrey SHARED ${pointgrey_srcs})
+add_library(lima${NAME} SHARED ${${NAME}_srcs})
 
 #INCLUDEs
-target_include_directories(limapointgrey PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
-target_include_directories(limapointgrey PUBLIC "/usr/include/flycapture")
-target_include_directories(limapointgrey PUBLIC "/usr/include/flycapture/C")
+target_include_directories(lima${NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(lima${NAME} PUBLIC "/usr/include/flycapture")
+target_include_directories(lima${NAME} PUBLIC "/usr/include/flycapture/C")
 
 #LIBRARIES
-find_library(POINTGREY_LIB_FLYCAPTURE flycapture)
-if("${POINTGREY_LIB_FLYCAPTURE}" STREQUAL "POINTGREY_LIB_FLYCAPTURE-NOTFOUND")
-  message(FATAL_ERROR "pointgrey : flycapture not found, you can search it in cmake-gui or try to install it if it isn't here.")
+find_library(POINTGREY_FLYCAPTURE_LIB flycapture)
+if("${POINTGREY_FLYCAPTURE_LIB}" STREQUAL "POINTGREY_FLYCAPTURE_LIB-NOTFOUND")
+  message(FATAL_ERROR "${NAME} : flycapture not found, you can search it in cmake-gui or try to install it if it isn't here.")
 endif()
 
-target_link_libraries(limapointgrey limacore)
-target_link_libraries(limapointgrey ${POINTGREY_LIB_FLYCAPTURE})
+target_link_libraries(lima${NAME} limacore)
+target_link_libraries(lima${NAME} ${POINTGREY_FLYCAPTURE_LIB})
 
 
-set_target_properties(limapointgrey PROPERTIES VERSION ${pointgrey_vers} SOVERSION "1")
+include(CameraVERSION)
+install(TARGETS lima${NAME} LIBRARY DESTINATION lib)
 
-install(TARGETS limapointgrey LIBRARY DESTINATION lib)
-
-if(COMPILE_SIP)
-    set(NAME "pointgrey")
+if(LIMA_ENABLE_PYTHON)
     include(CameraRunSIP)
     install(FILES python/__init__.py DESTINATION "${PYTHON_SITE_PACKAGES_DIR}/Lima/PointGrey")
 endif()
