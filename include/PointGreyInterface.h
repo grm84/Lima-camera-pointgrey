@@ -31,6 +31,8 @@ namespace PointGrey
 class Camera;
 class DetInfoCtrlObj;
 class SyncCtrlObj;
+class RoiCtrlObj;
+class BinCtrlObj;
 
 /*******************************************************************
  * \class Interface
@@ -60,6 +62,8 @@ private:
     CapList m_cap_list;
     DetInfoCtrlObj *m_det_info;
     SyncCtrlObj *m_sync;
+    RoiCtrlObj*	m_roi;
+    BinCtrlObj* m_bin;
 };
 } // namespace PointGrey
 } // namespace lima
